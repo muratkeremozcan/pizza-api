@@ -4,8 +4,8 @@
   "description": "",
   "main": "api.js",
   "scripts": {
-    "create": "claudia create --region us-east-1 --handler lambda.handler",
-    "update": "claudia update --cache-api-config apiConfig",
+    "create": "claudia create --region us-east-1 --handler lambda.handler --use-s3-bucket murat-pictures",
+    "update": "claudia update --profile personal --cache-api-config apiConfig --use-s3-bucket murat-pictures",
     "scan": "aws dynamodb scan --table-name pizza-orders --region us-east-1 --output json",
     "test": "node spec/support/jasmine-runner.js",
     "debug": "node debug spec/support/jasmine-runner.js"

@@ -38,23 +38,103 @@ Nav to https://app.launchdarkly.com/pizza-api-example/test/features/new and crea
 
 Install the LD SDK as a dependency; `npm install launchdarkly-node-server-sdk`.
 
-### Feature flagging the Update handler
+### LD & lambda function Basic sanity test
 
-Let's say that we want to flag the Update operation in the CRUD.
-
-In the handler file  `./handlers/update-order.js` import the LD client.
+Let's start with a simple example, console logging whether LD client initialized successfully. In the handler file  `./handlers/get-orders.js` import the LD client, initialize it, add a simple function to log out the initialization, then invoke it anywhere in the `getOrders()` function.
 
 ```js
-// ./handlers/update-order.js
+// ./handlers/get-orders.js
 
+// other imporrts...
 const ld = require('launchdarkly-node-server-sdk');
+// initialize the LD client
+const ldClient = ld.init("sdk-cfcea545-***");
+// add a simple function to log out LD client status
+const ldClientStatus = async (event) => {
+  let response = {
+    statusCode: 200,
+  };
+  try {
+    await client.waitForInitialization();
+    response.body = JSON.stringify("Initialization successful");
+  } catch (err) {
+    response.body = JSON.stringify("Initialization failed");
+  }
+  return response;
+};
+
+// this is the handler function that was in place prior
+function getOrders(orderId) {
+  console.log("Get order(s)", orderId);
+
+  console.log("INVOKING LAUNCHDARKLY TEST");
+  ldClientStatus().then(console.log);
+
+  // ... the rest of the function ...
 ```
 
-Now we need to create a singleton of the LDClient.
+Upload the lambda. We are assuming you are familiar with the ways of accomplishing this, and for our example all it takes is `npm run update`; ClaudiaJs is used under the hood to handle all the complexities. What we want to see at the end is LD giving information about the stream connection.
+
+> If this is the initial create operation vs an update, the command is `npm run create`. Again, it is assumed you are familiar with creating and updating lambda functions.
+
+ ![Upload get-orders sanity for ldClient](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/atyusdvpjunnnry76g8g.png)
+
+We use the [VsCode REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) - or any API test utility - to send a request for `GET {{base}}/orders`. 
+
+![Sanity test ldClient](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/fkpzbl6slaz14jf07ovt.png)
+
+Once we see in CloudWatch logs the LD info and the log `Initialization Successful`, then we have proof that all the setup is working.
+
+![CloudWatch GET sanity](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/2yqdr2knaf7djk2w9snd.png)
+
+### Wrap `update-order` in a feature flag
+
+There are a few key parts to the recipe:
+
+1. Import and initialize the ldClient
+2. Wait for the initialization
+3. Get the flag value
+4. Do things based on the flag value
 
 ```js
-const client = ld.init('sdk-cfcea545-***');
+// handlers/update-order.js
+
+// (1) Import and initialize the ldClient
+const ld = require("launchdarkly-node-server-sdk");
+const ldClient = ld.init("sdk-cfcea54-***");
+
+async function updateOrder(orderId, options) {
+  // ...
+
+  // (2) Wait for the initialization
+  await client.waitForInitialization()
+
+  // (3) Get the flag value: 
+  // ldClient.variation(<flag-name>, <user>, <default-flag-value>)
+  const FF_UPDATE_ORDER = await ldClient.variation('update-order')
+  
+  // for test purposes, log out the flag value
+  console.log('Flag value is :', FF_UPDATE_ORDER)
+
+  // (4) Do things based on flag value
+  if (!FF_UPDATE_ORDER) {
+    throw new Error("update-order feature flag is not enabled");
+  } 
+ 
+ // otherwise continue...
+}
+
 ```
 
-Test your setup by initializing LaunchDarkly and returning a response indicating whether it has succeeded or failed.
+There is a key enabler for stateless testing in `ldClient.variation` arguments; the second argument which is the user. Recall how we switched to an `anonymous user` in the blog post [Effective Test Strategies for Front-end Applications using LaunchDarkly Feature Flags and Cypress. Part2: testing](https://dev.to/muratkeremozcan/effective-test-strategies-for-testing-front-end-applications-using-launchdarkly-feature-flags-and-cypress-part2-testing-2c72) and that caused a random localstorage variable to be created by LD upon visiting a web page in a UI application. Mirroring that idea on an API, we want the user to be randomized / anonymous on every invocation of the lambda. The docs indicate the following:
 
+*@param `user` : The end user requesting the flag. The client will generate an analytics event to register this user with LaunchDarkly if the user does not already exist.*
+
+We will leave the user argument out.
+TODO: double check statelessness, and check if `{ key: *event*.Records[0].cf.request.clientIp },` is better
+
+Turn on the flag at the LD interface.
+
+ ![update flag on](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/8g6f0m4rqypczspk9euk.png)
+
+Upload the lambda with `npm run update`.

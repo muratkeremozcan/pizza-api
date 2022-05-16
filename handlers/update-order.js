@@ -1,31 +1,50 @@
 const AWSXRay = require("aws-xray-sdk-core");
 const AWS = AWSXRay.captureAWS(require("aws-sdk"));
 const docClient = new AWS.DynamoDB.DocumentClient();
+// (1) update and initialize LaunchDarkly client
 const ld = require("launchdarkly-node-server-sdk");
+const ldClient = ld.init("sdk-cfcea545-e9ad-437b-8aa0-090f501687f8");
 
-const client = ld.init("sdk-cfcea545-e9ad-437b-8aa0-090f501687f8");
-
-const testLD = async (event) => {
+const getFlagValue = async () => {
   let response = {
     statusCode: 200,
   };
+  let FF_UPDATE_ORDER;
+
   try {
-    await client.waitForInitialization();
+    await ldClient.waitForInitialization();
+    FF_UPDATE_ORDER = await ldClient.variation(
+      "update-order",
+      { anonymous: true },
+      false
+    );
     response.body = JSON.stringify("Initialization successful");
   } catch (err) {
     response.body = JSON.stringify("Initialization failed");
   }
-  return response;
+
+  return FF_UPDATE_ORDER;
 };
+
+// // (2) wait for the initialization
 
 function updateOrder(orderId, options) {
   console.log("Update an order", orderId);
 
-  testLD();
+  getFlagValue().then((flagValue) => {
+    console.log("Flag value is :", flagValue);
+  });
 
   if (!options || !options.pizza || !options.address) {
     throw new Error("Both pizza and address are required to update an order");
   }
+
+  // (3) get the flag value
+
+  // console.log("Flag value is :", FF_UPDATE_ORDER);
+
+  // if (!FF_UPDATE_ORDER)
+  //   throw new Error("update-order feature flag is not enabled");
 
   return docClient
     .update({
