@@ -96,6 +96,10 @@ There are a few key parts to the recipe:
 3. Get the flag value
 4. Do things based on the flag value
 
+From the docs: *Feature flag targeting and rollouts are determined by the active user. You must pass a user context to the SDK during initialization before requesting any feature flags with `variation`. Failure to pass a valid user context to the SDK during initialization will result in an error.*
+
+*The client emits a `ready` event when you have initialized it. You can also use the `waitForInitialization()` method, which returns a Promise. After you have initialized it, you can safely call `variation` to access your feature flags. The SDK emits the `ready` event only once, when the client first initializes. In a production application, your calls to `client.variation` would normally not be inside of this event handler.*
+
 ```js
 // handlers/update-order.js
 
