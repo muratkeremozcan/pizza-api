@@ -2,7 +2,7 @@ Sample repo for a lambda service using serverless Node and ClaudiaJs.
 
 >  The api is used in the blog post [CRUD API testing a deployed service with Cypress](https://dev.to/muratkeremozcan/crud-api-testing-a-deployed-service-with-cypress-using-cy-api-spok-cypress-data-session-cypress-each-4mlg), which also is accompanied by a GitHub repo [cypress-crud-api-test](https://github.com/muratkeremozcan/cypress-crud-api-test). While it is not recommended to have the source code and tests in different repos, for a case study this is ok; the ideas still apply the same way in a proper repository with tests and the code together. In the future, we plan have a more complete example with multiple micro services communicating, with the source code and tests together, a pyramid of e2e, consumer driven contract, and unit tests, using generic tech like Node, TypeScript, AWS cdk, Jest that are more familiar with the wider audience.
 
-The below is a draft  guide on e2e testing Launch Darkly feature flags.  A version of the app prior to the  feature flag setup can be checked out at the branch `before-feature-flags`. The changes in this PR can be found at `feat/ld-ff-1`
+The below is a draft  guide on e2e testing Launch Darkly feature flags.  A version of the app prior to the  feature flag setup can be checked out at the branch `before-feature-flags`. The changes in this PR can be found at the PR [feature flag setup and test](https://github.com/muratkeremozcan/pizza-api/pull/4).
 
 ## LaunchDarkly (LD) feature flags (FF)
 
