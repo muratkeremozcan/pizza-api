@@ -1,6 +1,6 @@
-Sample repo for a lambda service using serverless Node and ClaudiaJs. 
+Sample repo for a lambda service using serverless Node and ClaudiaJs.
 
->  The api is used in the blog post [CRUD API testing a deployed service with Cypress](https://dev.to/muratkeremozcan/crud-api-testing-a-deployed-service-with-cypress-using-cy-api-spok-cypress-data-session-cypress-each-4mlg), which also is accompanied by a GitHub repo [cypress-crud-api-test](https://github.com/muratkeremozcan/cypress-crud-api-test). While it is not recommended to have the source code and tests in different repos, for a case study this is ok; the ideas still apply the same way in a proper repository with tests and the code together. In the future, we plan have a more complete example with multiple micro services communicating, with the source code and tests together, a pyramid of e2e, consumer driven contract, and unit tests, using generic tech like Node, TypeScript, AWS cdk, Jest that are more familiar with the wider audience.
+> The api is used in the blog post [CRUD API testing a deployed service with Cypress](https://dev.to/muratkeremozcan/crud-api-testing-a-deployed-service-with-cypress-using-cy-api-spok-cypress-data-session-cypress-each-4mlg), which also is accompanied by a GitHub repo [cypress-crud-api-test](https://github.com/muratkeremozcan/cypress-crud-api-test). While it is not recommended to have the source code and tests in different repos, for a case study this is ok; the ideas still apply the same way in a proper repository with tests and the code together. In the future, we plan have a more complete example with multiple micro services communicating, with the source code and tests together, a pyramid of e2e, consumer driven contract, and unit tests, using generic tech like Node, TypeScript, AWS cdk, Jest that are more familiar with the wider audience.
 
 The below is a draft  guide on e2e testing Launch Darkly feature flags.  A version of the app prior to the  feature flag setup can be checked out at the branch `before-feature-flags`. The changes in this PR can be found at `feat/ld-ff-1`
 
@@ -10,7 +10,7 @@ The below is a distilled version of LD FF setup documentation for Node lambda fu
 
 ### Create a project at the LD interface
 
-Nav to *https://app.launchdarkly.com/settings/projects > Create project*. Give it any name like `pizza-api-example`, and the rest as default.
+Nav to *<https://app.launchdarkly.com/settings/projects> > Create project*. Give it any name like `pizza-api-example`, and the rest as default.
 
 ![Create project](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/5igpl5cpf4knugljjftm.png)
 
@@ -22,7 +22,7 @@ The critical item to note here is the **SDK key**, since we are not using a clie
 
 ### Create a Boolean FF for later use
 
-Nav to https://app.launchdarkly.com/pizza-api-example/test/features/new and create a boolean feature flag named `update-order`. You can leave the settings as default, and enter optional descriptions. We will use the flag to toggle the endpoint `PUT {{baseUrl}}/orders/{{orderId}}`. 
+Nav to <https://app.launchdarkly.com/pizza-api-example/test/features/new> and create a boolean feature flag named `update-order`. You can leave the settings as default, and enter optional descriptions. We will use the flag to toggle the endpoint `PUT {{baseUrl}}/orders/{{orderId}}`.
 
 ![Create a feature flag](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/8uzw38r75pf8l0550n83.png)
 
@@ -71,7 +71,7 @@ Upload the lambda. We are assuming you are familiar with the ways of accomplishi
 
  ![Upload get-orders sanity for ldClient](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/atyusdvpjunnnry76g8g.png)
 
-We use the [VsCode REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) - or any API test utility - to send a request for `GET {{base}}/orders`. 
+We use the [VsCode REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) - or any API test utility - to send a request for `GET {{base}}/orders`.
 
 ![Sanity test ldClient](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/fkpzbl6slaz14jf07ovt.png)
 
@@ -148,7 +148,7 @@ Use the rest client to update an order. We should be getting a 200 response, and
 
 ### Reusable module to get flag values
 
-There are two challenges with our code. First, we would have to duplicate it in any other handler that is using feature flags. Second, the `ldClient` variable being in the global scope is not very nice. 
+There are two challenges with our code. First, we would have to duplicate it in any other handler that is using feature flags. Second, the `ldClient` variable being in the global scope is not very nice.
 
 What if we could put it all in a module, from which we could import the utility suite to any handler? What if the handler calling our utility function had exclusive access to the LaunchDarkly client without any other part of the application knowing about it? Let's see how that can work. Create a new file `get-flag-value.js`.
 
@@ -268,13 +268,13 @@ Toggle the flag value to false at the LD interface. Send another PUT request usi
 
 ![Flag false](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/r6j8vn783arhm24zrwd5.png)
 
-Notice that when we toggled the flag, we did not have to deploy our lambda again. This is the magic of feature flags; we control what the users see through LaunchDarkly, completely de-coupling deployment from delivery. 
+Notice that when we toggled the flag, we did not have to deploy our lambda again. This is the magic of feature flags; we control what the users see through LaunchDarkly, completely de-coupling deployment from delivery.
 
 ## Setup environment variables
 
 #### Gather the values from the LD interface
 
-In preparation for the test section of this guide, we gather all the values we need from the LD interface. 
+In preparation for the test section of this guide, we gather all the values we need from the LD interface.
 
 We get the project key (`pizza-api-example`) and the SDK key from the Projects tab.
 
@@ -344,8 +344,8 @@ In the next section we will explore how to test our service while it is being co
 
 ## References
 
-* https://docs.launchdarkly.com/sdk/server-side/node-js
+* <https://docs.launchdarkly.com/sdk/server-side/node-js>
 
-* https://docs.launchdarkly.com/guides/platform-specific/aws-lambda/?q=lambda
+* <https://docs.launchdarkly.com/guides/platform-specific/aws-lambda/?q=lambda>
 
-* https://launchdarkly.com/blog/using-launchdarkly-with-typescript/
+* <https://launchdarkly.com/blog/using-launchdarkly-with-typescript/>
