@@ -1,0 +1,37 @@
+{
+  "name": "pizza-api",
+  "version": "1.0.1",
+  "description": "",
+  "main": "api.js",
+  "scripts": {
+    "create": "claudia create --region us-east-1 --handler lambda.handler --use-s3-bucket murat-pictures",
+    "update": "claudia update --profile personal --cache-api-config apiConfig --use-s3-bucket murat-pictures",
+    "scan": "aws dynamodb scan --table-name pizza-orders --region us-east-1 --output json",
+    "test": "node spec/support/jasmine-runner.js",
+    "debug": "node debug spec/support/jasmine-runner.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.910.0",
+    "aws-xray-sdk-core": "^3.3.3",
+    "claudia": "^5.13.1",
+    "claudia-api-builder": "^4.1.2",
+    "claudia-bot-builder": "^4.5.0",
+    "dotenv": "^10.0.0",
+    "launchdarkly-node-server-sdk": "^6.4.1",
+    "mime": "^2.5.2",
+    "minimal-request-promise": "^1.5.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "eslint": "^7.26.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.23.2",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "fake-http-request": "^1.4.0",
+    "jasmine": "^3.7.0",
+    "jasmine-spec-reporter": "^7.0.0"
+  }
+}
