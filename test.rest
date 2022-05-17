@@ -30,7 +30,7 @@ PUT {{base}}/orders/6772b8c1-26c6-43c5-93b9-a6ec75d22353
 Content-Type: application/json
 
 {
-  "pizza": 6,
+  "pizza": 5,
   "address":" 1234 Sesame Street"
 }
 ###

@@ -40,7 +40,7 @@ Let's start with a simple example, console logging whether LD client initialized
 // other imporrts...
 const ld = require('launchdarkly-node-server-sdk');
 // initialize the LD client
-const ldClient = ld.init("sdk-cfcea545-***");
+const ldClient = ld.init("sdk-****");
 // add a simple function to log out LD client status
 const ldClientStatus = async (event) => {
   let response = {
@@ -99,7 +99,7 @@ let ldClient;
  * which is available on the account settings in the LaunchDarkly dashboard.
  * Once the client is initialized, getClient() returns it. */
 async function getClient() {
-  const client = ld.init("sdk-cfcea545-e9ad-437b-8aa0-090f501687f8");
+  const client = ld.init("sdk-****");
   await client.waitForInitialization();
   return client;
 }
