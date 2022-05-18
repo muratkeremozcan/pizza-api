@@ -489,7 +489,7 @@ We can quickly setup Cypress Dashboard, and create the project:
 
 ![Cypress Dashboard project setup](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/3kioueq7aw8nmwar0wup.png)
 
-Grab the projectId - gets copied to `cypress.json` and record key - gets copied to `Github Setting ` - from here. 
+Grab the projectId (gets copied to `cypress.json`) and the record key (gets copied to Github secrets).
 
 ![Project id and record key](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/1lq333pb06kymrvfwcax.png)
 
