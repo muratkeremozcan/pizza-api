@@ -341,9 +341,7 @@ In the next section we will explore how to test our service while it is being co
 
 __________________
 
-
-
-## E2e Testing Feature Flags 
+## E2e Testing Feature Flags
 
 ### Cypress Setup
 
@@ -351,10 +349,10 @@ Before diving into testing feature flags, we will setup Cypress and transfer ove
 
 1. `before-feature-flags`
 2. `ld-ff-setup-test` : where we fully setup the node SDK for our lambda and showed it working via rest client.
-3. `before-cypress-setup` 
+3. `before-cypress-setup`
 4. `cypress-setup`: the branch for this section of the guide
 
-In the terminal run `npx @bahmutov/cly init` to scaffold Cypress into the repo. We add the Cypress plugins `npm i -D @bahmutov/cy-api cy-spok cypress-data-session cypress-each jsonwebtoken @withshepherd/faker`. 
+In the terminal run `npx @bahmutov/cly init` to scaffold Cypress into the repo. We add the Cypress plugins `npm i -D @bahmutov/cy-api cy-spok cypress-data-session cypress-each jsonwebtoken @withshepherd/faker`.
 
 We copy over the files to mirrored locations, and covert the TS to JS. A painless alternative is to look at the PR and copy over the changes.
 

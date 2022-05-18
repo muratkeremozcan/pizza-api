@@ -3,9 +3,10 @@
   "version": "1.0.1",
   "description": "",
   "main": "api.js",
+  "files": {},
   "scripts": {
-    "create": "claudia create --region us-east-1 --handler lambda.handler --use-s3-bucket murat-pictures",
-    "update": "claudia update --profile personal --cache-api-config apiConfig --use-s3-bucket murat-pictures",
+    "create": "claudia create --region us-east-1 --handler lambda.handler --use-s3-bucket deploy-bucket-claudiajs --no-optional-dependencies",
+    "update": "claudia update --profile personal --cache-api-config apiConfig --use-s3-bucket deploy-bucket-claudiajs --no-optional-dependencies",
     "scan": "aws dynamodb scan --table-name pizza-orders --region us-east-1 --output json",
     "test": "node spec/support/jasmine-runner.js",
     "debug": "node debug spec/support/jasmine-runner.js",
