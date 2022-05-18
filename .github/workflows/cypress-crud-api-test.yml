@@ -25,6 +25,7 @@ jobs:
         with:
           browser: chrome
           record: true
+          group: crud api test
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           LAUNCH_DARKLY_PROJECT_KEY: ${{ secrets.LAUNCH_DARKLY_PROJECT_KEY }}

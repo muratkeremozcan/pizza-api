@@ -493,6 +493,22 @@ Grab the projectId (gets copied to `cypress.json`) and the record key (gets copi
 
 ![Project id and record key](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/1lq333pb06kymrvfwcax.png)
 
-Configure the GitHub repo secrets at Settings > Actions  > Action Secrets, and git push.
+Configure the GitHub repo secrets at Settings > Actions  > Action Secrets.
 
 ![GHA Secrets](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/onls770fw0ob07mzroyr.png)
+
+Because of eventual consistency, when testing lambdas we prefer to increase the default command timeout from 4 to 10 seconds. Here is how `cypress.json` looks:
+
+```js
+{
+  "projectId": "4q6j7j",
+  "baseUrl": "https://2afo7guwib.execute-api.us-east-1.amazonaws.com/latest",
+  "viewportWidth": 1000,
+  "retries": {
+    "runMode": 2,
+    "openMode": 0
+  },
+  "defaultCommandTimeout": 10000
+}
+```
+
