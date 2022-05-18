@@ -3,7 +3,6 @@
   "version": "1.0.1",
   "description": "",
   "main": "api.js",
-  "files": {},
   "scripts": {
     "create": "claudia create --region us-east-1 --handler lambda.handler --use-s3-bucket deploy-bucket-claudiajs --no-optional-dependencies",
     "update": "claudia update --profile personal --cache-api-config apiConfig --use-s3-bucket deploy-bucket-claudiajs --no-optional-dependencies",
