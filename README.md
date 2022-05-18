@@ -1,4 +1,12 @@
-Sample repo for a lambda service using serverless Node and ClaudiaJs.
+
+
+[![main](https://github.com/muratkeremozcan/pizza-api/actions/workflows/main.yml/badge.svg?branch=main&event=push)](https://github.com/muratkeremozcan/pizza-api/actions/workflows/main.yml) [![cypress-crud-api-test](https://img.shields.io/endpoint?url=https://dashboard.cypress.io/badge/simple/4q6j7j/main&style=flat&logo=cypress)](https://dashboard.cypress.io/projects/4q6j7j/runs) ![cypress version](https://img.shields.io/badge/cypress-9.6.1-brightgreen) ![cypress-data-session version](https://img.shields.io/badge/cypress--data--session-2.0.0-brightgreen) ![cy-spok version](https://img.shields.io/badge/cy--spok-1.5.2-brightgreen) ![@bahmutov/cy-api version](https://img.shields.io/badge/@bahmutov/cy--api-2.1.3-brightgreen)
+
+[renovate-badge]: https://img.shields.io/badge/renovate-app-blue.svg
+[renovate-app]: https://renovateapp.com/
+
+
+Sample repo for a lambda service using serverless Node and ClaudiaJs. 
 
 The below is a draft  guide on e2e testing Launch Darkly feature flags.  A version of the app prior to the  feature flag setup can be checked out at the branch `before-feature-flags`. The changes in this PR can be found at the PR [feature flag setup and test](https://github.com/muratkeremozcan/pizza-api/pull/4).
 
@@ -450,7 +458,7 @@ module.exports = (on, config) => {
 We can quickly setup the CI and include LD project key and LD auth token as environment variables there. Recall from the previous blog post that we noted the SDK key for testing, but we needed it at the lambda function environment.
 
 ```yml
-# .github/workflows/cypress-crud-api-test.yml
+# .github/workflows/main.yml
 
 name: cypress-crud-api-test
 on:
