@@ -345,12 +345,17 @@ __________________
 
 ### Cypress Setup
 
-Before diving into testing feature flags, we will setup Cypress and transfer over the final CRUD e2e spec from the repo [cypress-crud-api-test](https://github.com/muratkeremozcan/cypress-crud-api-test). That repo was featured in the blog post [CRUD API testing a deployed service with Cypress](https://dev.to/muratkeremozcan/crud-api-testing-a-deployed-service-with-cypress-using-cy-api-spok-cypress-data-session-cypress-each-4mlg). Note that the said repo and this service used to be separate, and now we are combining the two. The branch prior to this work can be checked out at `before-cypress-setup`, and the PR for cypress setup can be found at ***TODO: insert link to the PR***. If you are following along, so far the milestone branches look as such:
+Before diving into testing feature flags, we will setup Cypress and transfer over the final CRUD e2e spec from the repo [cypress-crud-api-test](https://github.com/muratkeremozcan/cypress-crud-api-test). That repo was featured in the blog post [CRUD API testing a deployed service with Cypress](https://dev.to/muratkeremozcan/crud-api-testing-a-deployed-service-with-cypress-using-cy-api-spok-cypress-data-session-cypress-each-4mlg). Note that the said repo and this service used to be separate, and now we are combining the two. The branch prior to this work can be checked out at `before-cypress-setup`, and the PR for cypress setup can be found [here](https://github.com/muratkeremozcan/pizza-api/pull/6/files). If you are following along, a practical way to accomplish this section is to copy over the PR.
+
+So far the milestone branches look as such:
 
 1. `before-feature-flags`
 2. `ld-ff-setup-test` : where we fully setup the node SDK for our lambda and showed it working via rest client.
 3. `before-cypress-setup`
-4. `cypress-setup`: the branch for this section of the guide
+4. `cypress-setup`: the branch for this section of the guide; [PR](https://github.com/muratkeremozcan/pizza-api/pull/6/files).
+5. `after-cypress-setup`: if you want to skip this section, you can start from this branch
+
+If you do not want to copy the PR but set up Cypress and move over the code yourself, you can follow along.
 
 In the terminal run `npx @bahmutov/cly init` to scaffold Cypress into the repo. We add the Cypress plugins `npm i -D @bahmutov/cy-api cy-spok cypress-data-session cypress-each jsonwebtoken @withshepherd/faker`.
 
