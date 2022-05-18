@@ -1,7 +1,5 @@
 Sample repo for a lambda service using serverless Node and ClaudiaJs.
 
-> The api is used in the blog post [CRUD API testing a deployed service with Cypress](https://dev.to/muratkeremozcan/crud-api-testing-a-deployed-service-with-cypress-using-cy-api-spok-cypress-data-session-cypress-each-4mlg), which also is accompanied by a GitHub repo [cypress-crud-api-test](https://github.com/muratkeremozcan/cypress-crud-api-test). While it is not recommended to have the source code and tests in different repos, for a case study this is ok; the ideas still apply the same way in a proper repository with tests and the code together. In the future, we plan have a more complete example with multiple micro services communicating, with the source code and tests together, a pyramid of e2e, consumer driven contract, and unit tests, using generic tech like Node, TypeScript, AWS cdk, Jest that are more familiar with the wider audience.
-
 The below is a draft  guide on e2e testing Launch Darkly feature flags.  A version of the app prior to the  feature flag setup can be checked out at the branch `before-feature-flags`. The changes in this PR can be found at the PR [feature flag setup and test](https://github.com/muratkeremozcan/pizza-api/pull/4).
 
 ## LaunchDarkly (LD) feature flags (FF)
@@ -340,3 +338,34 @@ In the next section we will explore how to test our service while it is being co
 * <https://docs.launchdarkly.com/guides/platform-specific/aws-lambda/?q=lambda>
 
 * <https://launchdarkly.com/blog/using-launchdarkly-with-typescript/>
+
+__________________
+
+## E2e Testing Feature Flags
+
+### Cypress Setup
+
+Before diving into testing feature flags, we will setup Cypress and transfer over the final CRUD e2e spec from the repo [cypress-crud-api-test](https://github.com/muratkeremozcan/cypress-crud-api-test). That repo was featured in the blog post [CRUD API testing a deployed service with Cypress](https://dev.to/muratkeremozcan/crud-api-testing-a-deployed-service-with-cypress-using-cy-api-spok-cypress-data-session-cypress-each-4mlg). Note that the said repo and this service used to be separate, and now we are combining the two. The branch prior to this work can be checked out at `before-cypress-setup`, and the PR for cypress setup can be found [here](https://github.com/muratkeremozcan/pizza-api/pull/6/files). If you are following along, a practical way to accomplish this section is to copy over the PR.
+
+So far the milestone branches look as such:
+
+1. `before-feature-flags`
+2. `ld-ff-setup-test` : where we fully setup the node SDK for our lambda and showed it working via rest client.
+3. `before-cypress-setup`
+4. `cypress-setup`: the branch for this section of the guide; [PR](https://github.com/muratkeremozcan/pizza-api/pull/6/files).
+5. `after-cypress-setup`: if you want to skip this section, you can start from this branch
+
+If you do not want to copy the PR but set up Cypress and move over the code yourself, you can follow along.
+
+In the terminal run `npx @bahmutov/cly init` to scaffold Cypress into the repo. We add the Cypress plugins `npm i -D @bahmutov/cy-api cy-spok cypress-data-session cypress-each jsonwebtoken @withshepherd/faker`.
+
+We copy over the files to mirrored locations, and covert the TS to JS. A painless alternative is to look at the PR and copy over the changes.
+
+* `cypress/support/index.ts`
+* `cypress/support/commands.ts`
+* `cypress/integration/with-spok.spec.ts`
+* `cypress/plugins/index.js`
+* `scripts/cypress-token.js`
+* `./cypress.json`
+
+To ensure all is working order, we do another deploy with `npm run update`, we start and execute the tests with `npm run cypress:open`, we check CloudWatch for the logs.

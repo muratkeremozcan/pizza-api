@@ -4,11 +4,13 @@
   "description": "",
   "main": "api.js",
   "scripts": {
-    "create": "claudia create --region us-east-1 --handler lambda.handler --use-s3-bucket murat-pictures",
-    "update": "claudia update --profile personal --cache-api-config apiConfig --use-s3-bucket murat-pictures",
+    "create": "claudia create --region us-east-1 --handler lambda.handler --no-optional-dependencies",
+    "update": "claudia update --profile personal --cache-api-config apiConfig --no-optional-dependencies",
     "scan": "aws dynamodb scan --table-name pizza-orders --region us-east-1 --output json",
     "test": "node spec/support/jasmine-runner.js",
-    "debug": "node debug spec/support/jasmine-runner.js"
+    "debug": "node debug spec/support/jasmine-runner.js",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run"
   },
   "license": "MIT",
   "dependencies": {
@@ -24,6 +26,11 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
+    "@bahmutov/cy-api": "^2.1.3",
+    "@withshepherd/faker": "^5.5.5",
+    "cy-spok": "^1.5.2",
+    "cypress-data-session": "^2.0.0",
+    "cypress-each": "^1.11.0",
     "eslint": "^7.26.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.23.2",
@@ -32,6 +39,7 @@
     "eslint-plugin-promise": "^5.1.0",
     "fake-http-request": "^1.4.0",
     "jasmine": "^3.7.0",
-    "jasmine-spec-reporter": "^7.0.0"
+    "jasmine-spec-reporter": "^7.0.0",
+    "jsonwebtoken": "^8.5.1"
   }
 }
