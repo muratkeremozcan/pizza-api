@@ -520,3 +520,195 @@ Because of eventual consistency, when testing lambdas we prefer to increase the 
 }
 ```
 
+#### Plugin in action
+
+[The plugin API](https://github.com/bahmutov/cypress-ld-control#api) provides these functions:
+
+- getFeatureFlags
+- getFeatureFlag
+- setFeatureFlagForUser
+- removeUserTarget
+- removeTarget (works like a deleteAll version of the previous)
+
+The idempotent calls should be safe anywhere:
+
+```js
+// cypress/integration/ff-sanity.spec.js
+
+it("get flags", () => {
+  // get one flag
+  cy.task("cypress-ld-control:getFeatureFlag", "update-order").then(
+    console.log
+  );
+  
+  // get all flags (in an array)
+  cy.task("cypress-ld-control:getFeatureFlags").then(console.log);
+});
+```
+
+The sanity test should confirm the flag configuration we have at the LD interface.
+
+![FF sanity](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/sf4dzxkd6osn8n4tahfx.png)
+
+We like making helper functions out of the frequently used plugin commands. In Cypress, `cy.task` cannot be used inside a command, but it is perfectly fine in a utility function. You can copy and reuse these utilities anywhere.
+
+```js
+// cypress/support/ff-helper.js
+
+/**
+ * Gets a feature flag by name
+ * @param featureFlagKey this is usually a kebab-case string, or an enum representation of it
+ * ```js
+ * getFeatureFlag("update-order")
+ * ```
+ */
+export const getFeatureFlag = (featureFlagKey) =>
+  cy.task("cypress-ld-control:getFeatureFlag", featureFlagKey);
+
+/**
+ * Gets all feature flags
+ * @returns {Array}
+ * ```js
+ * getFeatureFlags()
+ * ```
+ */
+export const getFeatureFlags = () =>
+  cy.task("cypress-ld-control:getFeatureFlags");
+
+/**
+ * Sets a feature flag variation for a user.
+ * @param featureFlagKey this is usually a kebab-case string, or an enum representation of it
+ * @param userId LD user id, for anonymous users it is randomly set
+ * @param variationIndex index of the flag; 0 and 1 for boolean, can be more for other variants
+ * ```js
+ * setFlagVariation(featureFlagKey, userId, 0)
+ * ```
+ */
+export const setFlagVariation = (featureFlagKey, userId, variationIndex) =>
+  cy.task("cypress-ld-control:setFeatureFlagForUser", {
+    featureFlagKey,
+    userId,
+    variationIndex,
+  });
+
+/**
+ * Removes feature flag for a user.
+ * @param featureFlagKey this is usually a kebab-case string, or an enum representation of it
+ * @param userId LD user id, for anonymous users it is randomly set
+ * ```js
+ * removeUserTarget(featureFlagKey, userId)
+ * ```
+ */
+export const removeUserTarget = (featureFlagKey, userId) =>
+  cy.task("cypress-ld-control:removeUserTarget", {
+    featureFlagKey,
+    userId,
+  });
+
+/**
+ * Can be used like a deleteAll in case we have multiple users being targeted
+ * @param featureFlagKey
+ * @param targetIndex
+ * ```js
+ * removeTarget(featureFlagKey)
+ * ```
+ */
+export const removeTarget = (featureFlagKey, targetIndex = 0) =>
+  cy.task("cypress-ld-control:removeTarget", {
+    featureFlagKey,
+    targetIndex,
+  });
+
+```
+
+We can use the helper functions from here on, and add some assertions. We are getting all the data from the network, and can even do deeper assertions with `cy-spok`. 
+
+
+
+```js
+// cypress/integration/ff-sanity.spec.js
+
+import { getFeatureFlags, getFeatureFlag } from "../support/ff-helper";
+import spok from "cy-spok";
+
+describe("FF sanity", () => {
+  it("should get flags", () => {
+    getFeatureFlag("update-order").its("key").should("eq", "update-order");
+
+    getFeatureFlags().its("items.0.key").should("eq", "update-order");
+  });
+
+  it("should get flag variations", () => {
+    getFeatureFlag("update-order")
+      .its("variations")
+      .should((variations) => {
+        expect(variations[0].value).to.eq(true);
+        expect(variations[1].value).to.eq(false);
+      });
+  });
+
+	it('should make deeper assertions with spok', () => {
+
+    getFeatureFlag("update-order")
+      .its("variations")
+      .should(
+        spok([
+          {
+						description: "PUT endpoint available",
+            value: true,
+          },
+          {
+						description: "PUT endpoint is not available",
+            value: false,
+          },
+        ])
+      );
+	})
+});
+```
+
+![spok data](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ci6vmvtw1q9qiamaz28n.png)
+
+### Using enums for flag values
+
+We are using the the string `update-order` often. In the previous blog we even used it at `./handlers/update-order.js`. When there are so many flags being used in our system, it is possible to use an incorrect string. It would be great if we had a central location of flags, we imported those enums and could never get the flag name wrong.
+
+There are a few benefits of using enums:
+
+- We have a high level view of all our flags since they are at a central location.
+- We cannot get them wrong while using the flags in lambdas or tests; string vs enum.
+- In any file, it is clear which flags are relevant.
+- It is easy to search for the flags and where they are used, which makes implementation and maintenance seamless.
+
+In JS `Object.freeze` can be used to replicate TS' enum behavior. Now is also a good time to move to move the `get-flag-value.js` from `./handlers` into `./flag-utils`. Here is the refactor: 
+
+```js
+// ./flag-utils/flags.js
+
+const FLAGS = Object.freeze({
+  UPDATE_ORDER: 'update-order'
+})
+module.exports = {
+  FLAGS
+};
+
+// at spec file import the constant & replace the string arg
+// ./cypress/integration/ff-sanity.spec.js
+import { FLAGS } from "../../flag-utils/flags";
+
+it("should get flags", () => {
+  getFeatureFlag(FLAGS.UPDATE_ORDER)
+  // ...
+
+// at the handler file, do the same
+// ./handlers/update-order.js
+const getFlagValue = require("../ff-utils/get-flag-value");
+const { FLAGS } = require("../flag-utils/flags");
+
+async function updateOrder(orderId, options) {
+  const FF_UPDATE_ORDER = await getFlagValue(FLAGS.UPDATE_ORDER);
+  //...
+```
+
+After the refactor, we can quickly deploy the code with `npm run update` and run the run the tests with `npm run cy:run`. Having API e2e tests  for lambda functions gives us confidence on code as well as deployment quality.
+
