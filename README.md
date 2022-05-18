@@ -368,4 +368,131 @@ We copy over the files to mirrored locations, and covert the TS to JS. A painles
 * `scripts/cypress-token.js`
 * `./cypress.json`
 
-To ensure all is working order, we do another deploy with `npm run update`, we start and execute the tests with `npm run cypress:open`, we check CloudWatch for the logs.
+To ensure all is in working order, we do another deploy with `npm run update`, we start and execute the tests with `npm run cypress:open`, we check CloudWatch for the logs regarding the flag value, since PUT is a part of the CRUD operation in the e2e test.
+
+### Controlling FF with `cypress-ld-control` plugin
+
+My friend Gleb Bahmutov authored an [excellent blog](https://glebbahmutov.com/blog/cypress-and-launchdarkly/) on testing LD with Cypress, there he revealed his new plugin [cypress-ld-control](https://github.com/bahmutov/cypress-ld-control). We used it in [Effective Test Strategies for Front-end Applications using LaunchDarkly Feature Flags and Cypress. Part2: testing](https://dev.to/muratkeremozcan/effective-test-strategies-for-testing-front-end-applications-using-launchdarkly-feature-flags-and-cypress-part2-testing-2c72).
+
+#### Plugin setup
+
+`npm i -D cypress-ld-control` to add the plugin. 
+
+Getting ready for this section, previous we already took note of the LD auth token, installed `dotenv` and saved environment variables in the `.env` file. Here is how the `.env` file should look with your SDK key and auth token:
+
+```
+LAUNCHDARKLY_SDK_KEY=sdk-***
+LAUNCH_DARKLY_PROJECT_KEY=pizza-api-example
+LAUNCH_DARKLY_AUTH_TOKEN=api-***
+```
+
+> The [cypress-ld-control](https://github.com/bahmutov/cypress-ld-control) plugin utilizes [cy.task](https://docs.cypress.io/api/commands/task), which allows node code to execute within Cypress context. Therefore we will not be able to use `cypress.env.json` to store these LD related environment variables locally. Consequently we are using .env and declaring the auth token.
+
+The plugins file should be setup as such:
+
+```js
+// cypress/plugins/index.js
+
+/// <reference types="cypress" />
+
+const cyDataSession = require("cypress-data-session/src/plugin");
+const token = require("../../scripts/cypress-token");
+// cypress-ld-control setup
+const { initLaunchDarklyApiTasks } = require("cypress-ld-control");
+require("dotenv").config();
+
+module.exports = (on, config) => {
+  const combinedTasks = {
+    // add your other Cypress tasks if any
+    token: () => token,
+    log(x) {
+      // prints into the terminal's console
+      console.log(x);
+      return null;
+    },
+  };
+
+  // if no env vars, don't load the plugin
+  if (
+    process.env.LAUNCH_DARKLY_PROJECT_KEY &&
+    process.env.LAUNCH_DARKLY_AUTH_TOKEN
+  ) {
+    const ldApiTasks = initLaunchDarklyApiTasks({
+      projectKey: process.env.LAUNCH_DARKLY_PROJECT_KEY,
+      authToken: process.env.LAUNCH_DARKLY_AUTH_TOKEN,
+      environment: "test", // the name of your environment to use
+    });
+    // copy all LaunchDarkly methods as individual tasks
+    Object.assign(combinedTasks, ldApiTasks);
+    // set an environment variable for specs to use
+    // to check if the LaunchDarkly can be controlled
+    config.env.launchDarklyApiAvailable = true;
+  } else {
+    console.log("Skipping cypress-ld-control plugin");
+  }
+
+  // register all tasks with Cypress
+  on("task", combinedTasks);
+
+  return Object.assign(
+    {},
+    config, // make sure to return the updated config object
+    // add any other plugins here
+    cyDataSession(on, config)
+  );
+};
+```
+
+> See other plugin file examples [here](https://github.com/bahmutov/cypress-ld-control/blob/main/cypress/plugins/index.js.) and [here](https://github.com/muratkeremozcan/react-hooks-in-action-with-cypress/blob/main/cypress/plugins/index.js).
+>
+> Check out the [5 mechanics around cy.task and the plugin file](https://www.youtube.com/watch?v=2HdPreqZhgk&t=279s).
+
+We can quickly setup the CI and include LD project key and LD auth token as environment variables there. Recall from the previous blog post that we noted the SDK key for testing, but we needed it at the lambda function environment.
+
+```yml
+# .github/workflows/cypress-crud-api-test.yml
+
+name: cypress-crud-api-test
+on:
+  push:
+  workflow_dispatch:
+
+# if this branch is pushed back to back, cancel the older branch's workflow
+concurrency:
+  group: ${{ github.ref }} && ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    strategy:
+      # uses 1 CI machine
+      matrix:
+        machines: [1]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@v3.02
+
+      # https://github.com/cypress-io/github-action
+      - name: Run api tests 🧪
+        uses: cypress-io/github-action@v3.0.2
+        with:
+          browser: chrome
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          LAUNCH_DARKLY_PROJECT_KEY: ${{ secrets.LAUNCH_DARKLY_PROJECT_KEY }}
+          LAUNCH_DARKLY_AUTH_TOKEN: ${{ secrets.LAUNCH_DARKLY_AUTH_TOKEN }}
+
+```
+
+We can quickly setup Cypress Dashboard, and create the project:
+
+![Cypress Dashboard project setup](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/3kioueq7aw8nmwar0wup.png)
+
+Grab the projectId - gets copied to `cypress.json` and record key - gets copied to `Github Setting ` - from here. 
+
+![Project id and record key](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/1lq333pb06kymrvfwcax.png)
+
+Configure the GitHub repo secrets at Settings > Actions  > Action Secrets, and we 
+
+![GHA Secrets](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/onls770fw0ob07mzroyr.png)
