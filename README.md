@@ -471,18 +471,18 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout 🛎
-        uses: actions/checkout@v3.02
+        uses: actions/checkout@v2
 
       # https://github.com/cypress-io/github-action
       - name: Run api tests 🧪
         uses: cypress-io/github-action@v3.0.2
         with:
           browser: chrome
+          record: true
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           LAUNCH_DARKLY_PROJECT_KEY: ${{ secrets.LAUNCH_DARKLY_PROJECT_KEY }}
           LAUNCH_DARKLY_AUTH_TOKEN: ${{ secrets.LAUNCH_DARKLY_AUTH_TOKEN }}
-
 ```
 
 We can quickly setup Cypress Dashboard, and create the project:
@@ -493,6 +493,6 @@ Grab the projectId - gets copied to `cypress.json` and record key - gets copied 
 
 ![Project id and record key](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/1lq333pb06kymrvfwcax.png)
 
-Configure the GitHub repo secrets at Settings > Actions  > Action Secrets, and we 
+Configure the GitHub repo secrets at Settings > Actions  > Action Secrets, and git push.
 
 ![GHA Secrets](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/onls770fw0ob07mzroyr.png)
