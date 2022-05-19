@@ -4,7 +4,7 @@
 import spok from "cy-spok";
 import { datatype, address } from "@withshepherd/faker";
 
-describe("Crud operations with cy spok", () => {
+describe.skip("Crud operations with cy spok", () => {
   let token;
   before(() => cy.task("token").then((t) => (token = t)));
 
