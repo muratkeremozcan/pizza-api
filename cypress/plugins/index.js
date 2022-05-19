@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 
+const getFlagValue = require("../../flag-utils/get-flag-value");
 const cyDataSession = require("cypress-data-session/src/plugin");
 const token = require("../../scripts/cypress-token");
 // cypress-ld-control setup
@@ -15,6 +16,7 @@ module.exports = (on, config) => {
       console.log(x);
       return null;
     },
+    getFlagValue,
   };
 
   // if no env vars, don't load the plugin

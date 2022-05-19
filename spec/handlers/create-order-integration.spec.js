@@ -17,7 +17,9 @@ const dynamoDb = new AWS.DynamoDB({
 const tableName = `pizzaOrderTest${new Date().getTime()}`;
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 60000; // crudding dynamoDB can take time, so we increase the timeout
 
-// any unit tests on the wire isn't very good
+// the dynamoDb permission is a pain to get to work in CI
+// it's nice that the lambda is not being called, but it's not very nice that dynamo is
+// we need to find better patterns to establish this at unit level, or just do e2e
 xdescribe("Create order (integration)", () => {
   // KEY: you need to create a DynamoDB table before all tests using Jasmine’s beforeAll function.
 
