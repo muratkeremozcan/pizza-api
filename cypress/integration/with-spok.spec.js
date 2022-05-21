@@ -3,8 +3,10 @@
 
 import spok from "cy-spok";
 import { datatype, address } from "@withshepherd/faker";
+import { FLAGS } from "../../flag-utils/flags";
+const getFlagValue = require("../../flag-utils/get-flag-value");
 
-describe.skip("Crud operations with cy spok", () => {
+describe("Crud operations with cy spok", () => {
   let token;
   before(() => cy.task("token").then((t) => (token = t)));
 
@@ -54,9 +56,19 @@ describe.skip("Crud operations with cy spok", () => {
             })
           );
 
-        cy.updateOrder(token, orderId, putPayload)
-          .its("body")
-          .should(satisfyAssertions);
+        cy.log(
+          "**wrap the relevant functionality in the flag value, only run if the flag is enabled**"
+        );
+        cy.task("getFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) => {
+          if (flagValue) {
+            cy.log("**the flag is enabled, updating now**");
+            cy.updateOrder(token, orderId, putPayload)
+              .its("body")
+              .should(satisfyAssertions);
+          } else {
+            cy.log("**the flag is disabled, so the update will not be done**");
+          }
+        });
 
         cy.getOrder(token, orderId).its("body").should(satisfyAssertions);
 

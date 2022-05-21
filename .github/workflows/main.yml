@@ -32,5 +32,9 @@ jobs:
           LAUNCH_DARKLY_AUTH_TOKEN: ${{ secrets.LAUNCH_DARKLY_AUTH_TOKEN }}
           LAUNCHDARKLY_SDK_KEY: ${{ secrets.LAUNCHDARKLY_SDK_KEY }} #{{
       
+      # being lazy and taking advantage of npm install in Cypress GHA
+      # ideally we have an install job first, and carry over the cache to unit and e2e jobs
+      # check this link for the better way
+      # https://github.com/muratkeremozcan/react-hooks-in-action-with-cypress/blob/main/.github/workflows/main.yml
       - name: run unit tests
         run: npm run test

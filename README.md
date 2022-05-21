@@ -10,9 +10,18 @@ Sample repo for a lambda service using serverless Node and ClaudiaJs.
 
 The below is a draft  guide on e2e testing Launch Darkly feature flags.  A version of the app prior to the  feature flag setup can be checked out at the branch `before-feature-flags`. The changes in this PR can be found at the PR [feature flag setup and test](https://github.com/muratkeremozcan/pizza-api/pull/4).
 
+TODO: add the entire branch flow
+
+1. `before-feature-flags`
+2. `ld-ff-setup-test` : where we fully setup the node SDK for our lambda and showed it working via rest client.
+3. `before-cypress-setup`
+4. `cypress-setup`: the branch for this section of the guide; [PR](https://github.com/muratkeremozcan/pizza-api/pull/6/files).
+5. `after-cypress-setup`: if you want to skip this section, you can start from this branch
+6. `ld-ff-ld-e2e `: the branch the blog will be worked on
+
 ## LaunchDarkly (LD) feature flags (FF)
 
-The below is a distilled version of LD FF setup documentation for Node lambda functions, applied to a sample API. Throughout the setup there will be references to the UI app variant of feature flagging in the blog post [Effective Test Strategies for Front-end Applications using LaunchDarkly Feature Flags and Cypress](https://dev.to/muratkeremozcan/effective-test-strategies-for-testing-front-end-applications-using-launchdarkly-feature-flags-and-cypress-part1-the-setup-jfp).
+The below is a distilled version of LD FF setup documentation for Node lambda functions, applied to a sample API. Throughout the setup there will be references to the UI app flavor of feature flagging in the blog post [Effective Test Strategies for Front-end Applications using LaunchDarkly Feature Flags and Cypress](https://dev.to/muratkeremozcan/effective-test-strategies-for-testing-front-end-applications-using-launchdarkly-feature-flags-and-cypress-part1-the-setup-jfp).
 
 ### Create a project at the LD interface
 
@@ -20,9 +29,9 @@ Nav to *<https://app.launchdarkly.com/settings/projects> > Create project*. Give
 
 ![Create project](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/5igpl5cpf4knugljjftm.png)
 
-Two default environments get created for us. We can leave them as is, or  delete one of them for this example.
+Two default environments get created for us. We can leave them as is, or delete one of them for our example.
 
-The critical item to note here is the **SDK key**, since we are not using a client-side ID. Note that in contrast to our Node API here, the UI app with React was using the [clientSideID](https://github.com/muratkeremozcan/react-hooks-in-action-with-cypress/blob/main/src/index.js#L8). Enterprise projects apply configuration management to these variables. In the beginning code samples, we will keep the SKD key as a string. Later we will use `dotenv` to read them from a local `.env` file, and also we will setup the lambda to include any key that is needed.
+The critical item to note here is the **SDK key**, since we are not using a client-side ID. In contrast to our Node API here, the UI app with React was using the [clientSideID](https://github.com/muratkeremozcan/react-hooks-in-action-with-cypress/blob/main/src/index.js#L8). In the beginning code samples, we will keep the SKD key as a string. Later we will use `dotenv` to read them from a local `.env` file, and also we will setup the lambda to include any key that is needed.
 
 ![Sdk key](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/bylyld4eg4840181fx1o.png)
 
@@ -65,7 +74,7 @@ const ldClientStatus = async (event) => {
   return response;
 };
 
-// this is the handler function that was in place prior
+// the handler function we had in place 
 function getOrders(orderId) {
   console.log("Get order(s)", orderId);
 
@@ -75,10 +84,7 @@ function getOrders(orderId) {
   // ... the rest of the function ...
 ```
 
-Upload the lambda. We are assuming you are familiar with the ways of accomplishing this, and for our example all it takes is `npm run update`; ClaudiaJs is used under the hood to handle all the complexities. What we want to see at the end is LD giving information about the stream connection.
-
-> If this is the initial create operation vs an update, the command is `npm run create`. Again, it is assumed you are familiar with creating and updating lambda functions.
-
+Upload the lambda. We are assuming you are familiar with the ways of accomplishing this, and for our example all it takes is `npm run update` or `npm run create` for the initial lambda creation; ClaudiaJs is used under the hood to handle all the complexities.  What we want to see at the end is LD giving information about the stream connection.
  ![Upload get-orders sanity for ldClient](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/atyusdvpjunnnry76g8g.png)
 
 We use the [VsCode REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) - or any API test utility - to send a request for `GET {{base}}/orders`.
@@ -140,19 +146,15 @@ function updateOrder(orderId, options) {
   // ... the rest of the handler code ...
 ```
 
-There is a key enabler for stateless testing in `getFlagValue` arguments; the second argument which is the user. Recall how we switched to an `anonymous user` in the blog post [Effective Test Strategies for Front-end Applications using LaunchDarkly Feature Flags and Cypress. Part2: testing](https://dev.to/muratkeremozcan/effective-test-strategies-for-testing-front-end-applications-using-launchdarkly-feature-flags-and-cypress-part2-testing-2c72) and that caused a random localstorage variable to be created by LD upon visiting a web page in a UI application. Mirroring that idea on an API, we want the user to be randomized / anonymous on every invocation of the lambda. The docs indicate the following:
+There is a key enabler for stateless testing in `getFlagValue` arguments; the second argument which is the user. Recall how we switched to an `anonymous user` in the blog post [Effective Test Strategies for Front-end Applications using LaunchDarkly Feature Flags and Cypress. Part2: testing](https://dev.to/muratkeremozcan/effective-test-strategies-for-testing-front-end-applications-using-launchdarkly-feature-flags-and-cypress-part2-testing-2c72) and that caused a random localstorage variable to be created by LD upon visiting a web page in a UI application. Mirroring that idea on an API, we want the user to be randomized / anonymous on every invocation of the lambda. To make stateless testing easier later, we will leave the user argument out. The docs indicate the following:
 
 *@param `user` : The end user requesting the flag. The client will generate an analytics event to register this user with LaunchDarkly if the user does not already exist.*
 
-To enable stateless testing, we will leave the user argument out.
-
 Proceed to turn on the flag at the LD interface.
 
- ![update flag on](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/8g6f0m4rqypczspk9euk.png)
+![update flag on](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/8g6f0m4rqypczspk9euk.png)
 
-Deploy the lambda with `npm run update`.
-
-Use the rest client to update an order. We should be getting a 200 response, and seeing the value of the flag at AWS CloudWatch, whether the flag value is true or false.
+Deploy the lambda with `npm run update`. Use the rest client to update an order. We should be getting a 200 response, and seeing the value of the flag at AWS CloudWatch, whether the flag value is true or false.
 
 ![CloudWatch: functions at handler](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/qmy1pxs7frlk9caj7eob.png)
 
@@ -160,9 +162,11 @@ Use the rest client to update an order. We should be getting a 200 response, and
 
 There are two challenges with our code. First, we would have to duplicate it in any other handler that is using feature flags. Second, the `ldClient` variable being in the global scope is not optimal.
 
+// TODO: use better naming for the function so that there is no overlap later with cypress-ld-control-later. Instead of getFlagValue, something to indicate that the value is coming from the LD instance.
+
 What if we could put it all in a module, from which we could import the utility function `getFlagValue` to any handler? What if the handler calling our utility function had exclusive access to the LaunchDarkly client without any other part of the application knowing about it? Let's see how that can work. Create a new file `get-flag-value.js`.
 
-We use an IIFE and wrap the module so that `ldClient` cannot be observed by any other part of the application. This way, the handler has exclusive access to the LaunchDarkly client. Additionally, the instance of `ldClient` gets stored in the module scope. It gets reused by the handler in case the flag does not change value and it is called back to back
+We use an IIFE and wrap the module so that `ldClient` cannot be observed by any other part of the application. This way, the handler has exclusive access to the LaunchDarkly client. Additionally, the instance of `ldClient` gets stored in the module scope. It gets reused by the handler in case the flag does not change value and it is called back to back.
 
 ```js
 // ./handlers/get-flag-value.js
@@ -208,6 +212,7 @@ const docClient = new AWS.DynamoDB.DocumentClient();
 const getFlagValue = require("./get-flag-value");
 
 async function updateOrder(orderId, options) {
+  // we acquire the flag value
   const FF_UPDATE_ORDER = await getFlagValue("update-order");
 
   console.log("You tried to Update the order: ", orderId);
@@ -217,6 +222,7 @@ async function updateOrder(orderId, options) {
     throw new Error("Both pizza and address are required to update an order");
   }
 
+  // once we have the flag value, any logic is possible
   if (FF_UPDATE_ORDER) {
     return docClient
       .update({
@@ -264,7 +270,7 @@ Toggle the flag value to false at the LD interface. Send another PUT request usi
 
 ![Flag false](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/r6j8vn783arhm24zrwd5.png)
 
-Notice that when we toggled the flag, we did not have to deploy our lambda again. This is the magic of feature flags; we control what the users see through LaunchDarkly interface, completely de-coupling deployment from delivery.
+Notice that when we toggled the flag, we did not have to deploy our lambda again. **This why feature flagging is the future of continuous delivery; we control what the users see through LaunchDarkly interface, completely de-coupling deployment from deliver**y.
 
 ## Setup environment variables
 
@@ -282,7 +288,7 @@ We create an Auth token for our api at Authorization tab. It needs to be an Admi
 
 #### Local env vars and `process.env`
 
-We can use [dotenv](https://www.npmjs.com/package/dotenv) to have access to `process.env` in our Node code.  `npm i dotenv` and create a gitignored `.env` file in the root of your project. Note that it has to be a project dependency.
+We can use [dotenv](https://www.npmjs.com/package/dotenv) to have access to `process.env` in our Node code.  `npm i dotenv` and create a gitignored `.env` file in the root of your project. Note that `dotenv` has to be a project dependency because we need it in the source code.
 
 Per convention, we can create a `.env.example` file in the root, and that should communicate to repo users that they need an `.env` file with real values in place of wildcards.
 
@@ -294,7 +300,7 @@ LAUNCH_DARKLY_AUTH_TOKEN=api-***
 
 #### Lambda env vars
 
-Navigate to our lambda function in AWS > Configuration > Environment variables and add `LAUNCHDARKLY_SDK_KEY`. This is the only environment variable that gets used in the code. The other two get used in the tests and will only be needed later in Github environment variables.
+Navigate to our lambda function in AWS > Configuration > Environment variables and add `LAUNCHDARKLY_SDK_KEY`. This is the only environment variable that gets used in the code. The trio of environment variables get used in the tests and will be needed later in Github & CI yml file settings.
 
  ![Lambda env vars](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/suchvk1lncv2053wjyk3.png)
 
@@ -335,7 +341,7 @@ As usual, we deploy our code with `npm run update`, set the flag value at LD int
 
 ## Summary
 
-In this guide we covered LaunchDarkly Feature Flag setup for Node lambda functions. We created a project and a boolean feature flag at the LD interface. We showcased preferred best practices setting up and using `launchdarkly-node-server-sdk`. Finally we demoed a fully working example for a mid sized service and provided reproducible source code.
+In this guide we covered LaunchDarkly Feature Flag setup for Node lambda functions. We created a project and a boolean feature flag at the LD interface. We showcased preferred best practices setting up and using `launchdarkly-node-server-sdk` in a lambda. Finally we demoed a fully working example for a mid sized service and provided reproducible source code.
 
 In the next section we will explore how to test our service while it is being controlled by feature flags.
 
@@ -353,7 +359,9 @@ __________________
 
 ### Cypress Setup
 
-Before diving into testing feature flags, we will setup Cypress and transfer over the final CRUD e2e spec from the repo [cypress-crud-api-test](https://github.com/muratkeremozcan/cypress-crud-api-test). That repo was featured in the blog post [CRUD API testing a deployed service with Cypress](https://dev.to/muratkeremozcan/crud-api-testing-a-deployed-service-with-cypress-using-cy-api-spok-cypress-data-session-cypress-each-4mlg). Note that the said repo and this service used to be separate repositories - that is a known anti-pattern - and now we are combining the two. The change will provide us with the ability to use the LaunchDarkly instance to make flag state assertions. We would not have that capability if the test code was in a separate repo than the source code. 
+Before diving into testing feature flags, we will setup Cypress and transfer over the final CRUD e2e spec from the repo [cypress-crud-api-test](https://github.com/muratkeremozcan/cypress-crud-api-test). That repo was featured in the blog post [CRUD API testing a deployed service with Cypress](https://dev.to/muratkeremozcan/crud-api-testing-a-deployed-service-with-cypress-using-cy-api-spok-cypress-data-session-cypress-each-4mlg). Note that the said repo and this service used to be separate repositories - that is a known anti-pattern - and now we are combining the two in a whole new one. The change will provide us with the ability to use the LaunchDarkly instance to make flag state assertions. We would not have that capability if the test code was in a separate repo than the source code, unless the common code was moved to a  package & was imported to the separate development and test repos. In the real world if we had to apply that solution, we would want to have valuable trade-offs.
+
+> From our experience, one example of a valid trade-off for having the tests in a different repo than the source code is when the same test code is shared by multiple source code repositories, thereby eliminating the need to duplicate the test suite.
 
 The branch prior to this work can be checked out at `before-cypress-setup`, and the PR for cypress setup can be found [here](https://github.com/muratkeremozcan/pizza-api/pull/6/files). If you are following along, a practical way to accomplish this section is to copy over the PR.
 
@@ -379,7 +387,7 @@ We copy over the files to mirrored locations, and covert the TS to JS. A painles
 * `scripts/cypress-token.js`
 * `./cypress.json`
 
-To ensure all is in working order, we do another deploy with `npm run update`, we start and execute the tests with `npm run cypress:open`, we check CloudWatch for the logs regarding the flag value, since PUT is a part of the CRUD operation in the e2e test.
+To ensure all is in working order, we do another deploy with `npm run update`. We start and execute the tests with `npm run cypress:open`, we verify CloudWatch for the logs regarding the flag value, since PUT is a part of the CRUD operation in the e2e test.
 
 ### Controlling FF with `cypress-ld-control` plugin
 
@@ -389,7 +397,7 @@ My friend Gleb Bahmutov authored an [excellent blog](https://glebbahmutov.com/bl
 
 `npm i -D cypress-ld-control` to add the plugin. 
 
-Getting ready for this section, previous we already took note of the LD auth token, installed `dotenv` and saved environment variables in the `.env` file. Here is how the `.env` file should look with your SDK key and auth token:
+Getting ready for this section, previously we took note of the LD auth token, installed `dotenv` and saved environment variables in the `.env` file. Here is how the `.env` file should look with your SDK key and auth token:
 
 ```
 LAUNCHDARKLY_SDK_KEY=sdk-***
@@ -397,9 +405,7 @@ LAUNCH_DARKLY_PROJECT_KEY=pizza-api-example
 LAUNCH_DARKLY_AUTH_TOKEN=api-***
 ```
 
-The [cypress-ld-control](https://github.com/bahmutov/cypress-ld-control) plugin utilizes [cy.task](https://docs.cypress.io/api/commands/task), which allows Node code to execute within Cypress context. Therefore we will not be able to use `cypress.env.json` to store these LD related environment variables locally. Consequently we are using .env and declaring the auth token.
-
-Initially the plugins file should be setup as such:
+The [cypress-ld-control](https://github.com/bahmutov/cypress-ld-control) plugin utilizes [cy.task](https://docs.cypress.io/api/commands/task), which allows Node code to execute within Cypress context. Therefore we will not be able to use `cypress.env.json` to store these LD related environment variables locally. Consequently we are using .env and declaring the auth token. Initially the plugins file should be setup as such:
 
 ```js
 // cypress/plugins/index.js
@@ -458,7 +464,7 @@ module.exports = (on, config) => {
 >
 > Check out the [5 mechanics around cy.task and the plugin file](https://www.youtube.com/watch?v=2HdPreqZhgk&t=279s).
 
-We can quickly setup the CI and include LD project key and LD auth token as environment variables there. Recall from the previous blog post that we noted the SDK key for testing, but we needed it at the lambda function environment.
+We can quickly setup the CI and include LD project key, LD auth token and LD SDK key as environment variables. We need the first two `for cypress-ld-control`, and we need the SDK key for being able to use the LD client instance in the tests.
 
 ```yml
 # .github/workflows/main.yml
@@ -490,10 +496,21 @@ jobs:
         with:
           browser: chrome
           record: true
+          group: crud api test
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           LAUNCH_DARKLY_PROJECT_KEY: ${{ secrets.LAUNCH_DARKLY_PROJECT_KEY }}
           LAUNCH_DARKLY_AUTH_TOKEN: ${{ secrets.LAUNCH_DARKLY_AUTH_TOKEN }}
+          LAUNCHDARKLY_SDK_KEY: ${{ secrets.LAUNCHDARKLY_SDK_KEY }} #{{
+      
+			# Here we are running the unit tests after the e2e
+			# taking advantage of npm install in Cypress GHA.
+			# Ideally we install first, and carry over the cache
+			# to unit and e2e jobs.
+			# Check this link for the better way:
+			# https://github.com/muratkeremozcan/react-hooks-in-action-with-cypress/blob/main/.github/workflows/main.yml
+      - name: run unit tests
+        run: npm run test
 ```
 
 We can quickly setup Cypress Dashboard, and create the project:
@@ -506,7 +523,7 @@ Grab the projectId (gets copied to `cypress.json`) and the record key (gets copi
 
 Configure the GitHub repo secrets at Settings > Actions  > Action Secrets.
 
-![GHA Secrets](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/onls770fw0ob07mzroyr.png)
+![GHA secrets](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/qu8k9vvg99s1lpp3fvao.png)
 
 Because of eventual consistency, when testing lambdas we prefer to increase the default command timeout from 4 to 10 seconds. We also add retries for good measure. Here is how `cypress.json` looks:
 
@@ -523,6 +540,8 @@ Because of eventual consistency, when testing lambdas we prefer to increase the 
 }
 ```
 
+> Cypress has 3 levels of retries; function level, api level, and CI level. It is not only a great tool for UI e2e testing handling [network requests in a web app](https://docs.cypress.io/guides/guides/network-requests#Testing-Strategies), but it is also a great api testing framework thanks to [cy.request](https://docs.cypress.io/api/commands/request#Syntax). Check out the post [API e2e testing event driven systems](https://dev.to/muratkeremozcan/api-testing-event-driven-systems-7fe) for a better perspective.
+
 #### [`cypress-ld-control`](https://github.com/bahmutov/cypress-ld-control)plugin in action
 
 [The plugin API](https://github.com/bahmutov/cypress-ld-control#api) provides these functions:
@@ -533,7 +552,7 @@ Because of eventual consistency, when testing lambdas we prefer to increase the 
 - removeUserTarget
 - removeTarget (works like a deleteAll version of the previous)
 
-The idempotent calls should be safe anywhere:
+The idempotent calls are safe anywhere:
 
 ```js
 // cypress/integration/feature-flags/ff-sanity.spec.js
@@ -549,18 +568,19 @@ it("get flags", () => {
 });
 ```
 
-The sanity test confirm sthe flag configuration we have at the LD interface.
+The sanity test confirms the flag configuration we have at the LD interface.
 
 ![FF sanity](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/sf4dzxkd6osn8n4tahfx.png)
 
-We like making helper functions out of the frequently used plugin commands. In Cypress, `cy.task` cannot be used inside a command, but it is perfectly fine in a utility function. We added some logging to make the test runner easier to reason about. You can reuse these utilities anywhere.
+We like making helper functions out of the frequently used plugin commands. In Cypress, `cy.task` cannot be used inside a command, but it is perfectly fine in a utility function. We add some logging to make the test runner easier to reason about. You can reuse these utilities anywhere.
 
 ```js
 // cypress/support/ff-helper.js
 
 import { datatype, name } from "@withshepherd/faker";
 
-/** Used for stateless testing in our examples */
+/** Used for stateless testing in our examples.
+It may not be needed other projects */
 export const randomUserId = `FF_${name
   .firstName()
   .toLowerCase()}${datatype.number()}`;
@@ -590,7 +610,7 @@ export const getFeatureFlags = () =>
  * Sets a feature flag variation for a user.
  * @param featureFlagKey this is usually a kebab-case string, or an enum representation of it
  * @param userId LD user id, for anonymous users it is randomly set
- * @param variationIndex index of the flag; 0 and 1 for boolean, can be more for other variants
+ * @param variationIndex index of the flag; 0 and 1 for boolean, can be more for string, number or Json flag variants
  * ```js
  * setFlagVariation(featureFlagKey, userId, 0)
  * ```
@@ -627,14 +647,14 @@ export const removeUserTarget = (featureFlagKey, userId) =>
  * ```
  */
 export const removeTarget = (featureFlagKey, targetIndex = 0) =>
-  cy.log(`**removeTarget** flag: ${featureFlagKey} targetIndex: ${targetIndex}`)
+  cy.log(`**removeTarget** flag: ${featureFlagKey} targetIndex:${targetIndex}`)
     .task("cypress-ld-control:removeTarget", {
       featureFlagKey,
       targetIndex,
     });
 ```
 
-We can use the helper functions from here on, and add some assertions. We are getting all the data from the network, and can even do deeper assertions with `cy-spok`. 
+We can use the helper functions from now onwards. We are getting all the data from the network, and can even do deeper assertions with `cy-spok`. 
 
 ```js
 // cypress/integration/feature-flags/ff-sanity.spec.js
@@ -678,22 +698,23 @@ describe("FF sanity", () => {
 });
 ```
 
-Spok is great for mirroring the data we get from the wire into concise, comprehensive and flexible assertions. Here the data is just an array of properties.
+Spok is great for mirroring the data we get from the wire into concise, comprehensive and flexible assertions. Here the data is just an array of objects.
 
 ![spok data](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ci6vmvtw1q9qiamaz28n.png)
 
 #### Using enums for flag values
 
-We are using the the string `update-order` often. In the previous blog where the flag was setup, we even used it at the lambda `./handlers/update-order.js`. When there are so many flags being used in our system, it is possible to use an incorrect string. It would be great if we had a central location of flags, we imported those enums and could only get the flag name wrong in one spot.
+We are using the the string `update-order` often. In the previous blog where the flag was setup, we even used it at the lambda `./handlers/update-order.js`. When there are so many flags in our code base, it is possible to use an incorrect string. It would be great if we had a central location of flags, we imported those enums and could only get the flag name wrong in one spot.
 
-There are a few benefits of using enums:
+There are a few benefits of using enums and having variable convention to hold their values:
 
 - We have a high level view of all our flags since they are at a central location.
 - We cannot get them wrong while using the flags in lambdas or tests; string vs enum.
-- In any file, it is clear which flags are relevant.
-- It is easy to search for the flags and where they are used, which makes implementation and maintenance seamless.
+- In any file it would be clear which flags are relevant.
+- It would be easy to search for the flags and where they are used, which makes implementation and maintenance seamless.
 
-In JS `Object.freeze` can be used to replicate TS' enum behavior. Now is also a good time to move to move the `get-flag-value.js` from `./handlers` into `./flag-utils`, it will make life easier when using the utility for test assertions. Here is the refactor: 
+
+In JS `Object.freeze` can be used to replicate TS' enum behavior. Now is also a good time to move the `get-flag-value.js` from `./handlers` into `./flag-utils`, it will make life easier when using the utility for test assertions. Here is the refactor: 
 
 ```js
 // ./flag-utils/flags.js
@@ -705,7 +726,8 @@ module.exports = {
   FLAGS
 };
 
-// at spec file import the constant & replace the string arg
+
+// At the spec file import the constant & replace the string arg
 // ./cypress/integration/feature-flags/ff-sanity.spec.js
 import { FLAGS } from "../../flag-utils/flags";
 
@@ -713,7 +735,8 @@ it("should get flags", () => {
   getFeatureFlag(FLAGS.UPDATE_ORDER)
   // ...
 
-// at the handler file, do the same
+
+// At the handler file, do the same
 // ./handlers/update-order.js
 const getFlagValue = require("../ff-utils/get-flag-value");
 const { FLAGS } = require("../flag-utils/flags");
@@ -723,14 +746,13 @@ async function updateOrder(orderId, options) {
   //...
 ```
 
-After the refactor, we can quickly deploy the code with `npm run update` and run the run the tests with `npm run cy:run`. Having API e2e tests for lambda functions gives us confidence on code as well as deployment quality.
+After the refactor, we can quickly deploy the code with `npm run update` and run the run the tests with `npm run cy:run`. Having API e2e tests for lambda functions gives us confidence on the code as well as deployment quality.
 
 #### `setFlagVariation` enables a stateless approach
 
-We recall the lessons learned about stateless tests in *Randomizing the LD user key* section of [Effective Test Strategies for Front-end Applications using LaunchDarkly Feature Flags and Cypress. Part2: testing](https://dev.to/muratkeremozcan/effective-test-strategies-for-testing-front-end-applications-using-launchdarkly-feature-flags-and-cypress-part2-testing-2c72). For example, in the previous post for flag setup, we set an anonymous user at `update-order.js` handler. The flag-value-acquiring function call ` await getFlagValue(FLAGS.UPDATE_ORDER)` did not have a 2nd arg for user, therefore the user is anonymous. We *could* have a fixed-user, but proving out the statelessness of the e2e tests would be a little more challenging in our example.
+At first it may not be obvious from `cypress-ld-control` [api docs](https://github.com/bahmutov/cypress-ld-control#api) , but `setFeatureFlagForUser` takes a `userId` argument and **creates that userId if it does not exist**. If we use an arbitrary string, that key will appear on the LD Targeting tab. In case we are not using randomized users, emails or other randomized entities in our tests, we can utilize a function for generating random flag user ids. We can prefix that with `FF_` so that if there is any clean up needed later in flag management, those specific users can be cleared easily from the LD interface.
 
-
-At first it may not be obvious from `cypress-ld-control` [api docs](https://github.com/bahmutov/cypress-ld-control#api) , but `setFeatureFlagForUser` takes a `userId` argument and **creates that userId if it does not exist**. If we use an arbitrary string, that key will appear on the LD Targeting tab. In case we are not using randomized users, emails or other randomized entities in our tests, we can create a utility for generating random flag user ids. We can prefix that with `FF_` so that if there is any clean up needed later in flag management, those specific users can be cleared easily from the LD interface.
+> Any maintenance work about cleaning flags from the code or users from the LD interface involves the `FF_` prefix.
 
 ```js
 // ./cypress/support/ff-helper.js
@@ -742,13 +764,10 @@ export const randomUserId = `FF_${name
 ```
 
 ```js
+// cypress/integration/feature-flags/ff-sanity.spec.js
 
 it.only("should set the flag for a random user", () => {
   setFlagVariation(FLAGS.UPDATE_ORDER, randomUserId, 0);
-});
-
-it.only("should set the flag for a random user", () => {
-  setFlagVariation(FLAGS.UPDATE_ORDER, "foo", 0);
 });
 ```
 
@@ -756,7 +775,8 @@ Setting the flag by the user, we can view the flag being set to this targeted in
 
 ### Reading FF state using the test plugin vs the LD client instance
 
-Recall our flag utility at `./flag-utils/get-flag-value` which we also use in the lambda handler. At a high level it gets the flag value using the LD client, and it abstracts some work under the hood:
+// TODO: update the file name if it changes
+Recall our flag utility at `./flag-utils/get-flag-value` which we also use in the lambda handler. At a high level it gets the flag value using the LD client, and makes abstractions under the hood:
 
 1. Gets the flag value using the LD client.
 2. Initializes the LD client if it doesn't exist, else reuses the existing client.
@@ -764,7 +784,7 @@ Recall our flag utility at `./flag-utils/get-flag-value` which we also use in th
 4. If a user is not provided while getting the flag value, populates an anonymous user for user-targeting.
 5. The code calling the LD client cannot be observed by any other part of the application and is reused by the handler when it is called back to back without the flag changing value.
 
-That is a very useful bit of code, and the part we really need for test assertions is **how it can get the flag value for a targeted user, versus all other users**. 
+That is a very useful bit of code, and the part we need for test assertions is **how it can get the flag value for a targeted user, versus all other users**. 
 
 We can run any Node code within Cypress context via `cy.task`. Let's import `getFlagValue` to our plugins file at`cypress/plugins/index.js` and add it as a Cypress task.
 
@@ -811,7 +831,9 @@ it.only("should get a different flag value for a specified user", () => {
 });
 ```
 
-Executing that code, we realize a key enabler for stateless testing. We prove that the flag can be set for a targeted user, that value can be read by our `getFlagValue` lambda utility using the LD client, and finally we can either focus on the targeted user or any other generic user while reading our flag. **That ability can fully de-couple feature flag testing from feature flag management**.
+**KEY:** Executing that code, we realize the enabler for stateless feature flag testing. We prove that the flag can be set for a targeted user, that value can be read by our `getFlagValue` lambda utility using the LD client, which can either focus on the targeted user or any other generic user while reading our flag. **That ability can fully de-couple feature flag testing from feature flag management**.
+
+> In contrast, in a front-end application the key enabler for stateless testing was targeting anonymous users and the user's id - `ld:$anonUserId`  - getting created by LD in local storage.
 
 ![Stateless test 1](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/fl8oln5kug2hx279j4r9.png)
 
@@ -819,7 +841,9 @@ As a bonus, we can confirm our `cy.task` setup; when calling the task with a sin
 
 ![console.log cy.task args](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ye801cmsiuhzi8aspbbx.png)
 
-`cypress-ld-control` plugin allows us to set a flag for a targeted user. If it allowed changing the flag value for everyone, changing a shared mutable state for every flag reader would not be ideal. On the other hand, the plugin can only be used to get the flag value for generic users vs a targeted user. This wasn't a need when feature flag testing a UI application; we would just make assertions using the UI. Consequently, `getFlagValue` lambda utility using the LD client instance is also needed for user-targeted test assertions when statelessly testing feature flags in a deployed services.
+`cypress-ld-control` plugin allows us to set a flag for a targeted user. If it allowed changing the flag value for everyone, mutating a shared state for every flag reader would not be ideal. On the other hand, the plugin can only be used to get the flag value for generic users vs a targeted user. *(If Gleb disagrees or adds support for it later, we stand corrected)*. Reading the flag value for a targeted user wasn't a need when feature flag testing a UI application; while using anonymous users LD would set local storage with `ld:$anonUserId` enabling a unique browser instance which would we would make UI assertions against. Consequently, `getFlagValue` lambda utility using the LD client instance is also needed for user-targeted test assertions when statelessly testing feature flags in deployed services.
+
+Here is the high level summary of our feature flag testing tool set:
 
 `cypress-ld-control` test plugin:
 
@@ -833,7 +857,7 @@ As a bonus, we can confirm our `cy.task` setup; when calling the task with a sin
 
 `getFlagValue` LD client instance:
 
-* Our primary development Feature Flag enabler, used in lambda handlers to read flag state.
+* Our primary Feature Flag development enabler, used to read flag state.
 
 * In tests, it can read the flag value for generic users: `cy.task('getFlagValue', 'my-flag')`
 
@@ -853,7 +877,7 @@ Let's prove out the theory and show a harmonious usage of these utilities in a s
       setFlagVariation(FLAGS.UPDATE_ORDER, randomUserId, TARGETED_RULE_FALSE)
     );
 
-    // clean up: with afterEach it runs even if there is a test failure
+    // clean up: afterEach runs even if there is an it block failure
     afterEach("user-targeted-flag clean up", () =>
       removeUserTarget(FLAGS.UPDATE_ORDER, randomUserId)
     );
@@ -878,7 +902,7 @@ Let's prove out the theory and show a harmonious usage of these utilities in a s
 });
 ```
 
-Now that we have a complete suite reading and writing feature flags, we can refactor to our heart's content. Good tests are such a luxury, we can try daring code changes.
+Now that we have a complete suite reading and writing feature flags, we can refactor to our heart's content. Good e2e tests are such a luxury, we can try daring code changes, get code level, deployment level and test level confidence.
 
 ```js
 // ./cypress/plugins/index.js
@@ -904,4 +928,59 @@ const combinedTasks = {
 };
 
 ```
+
+### Test strategies
+
+Now that we have stateless feature flag setting & removing capabilities coupled with feature flag value reading - which is an idempotent operation - how can we use them in e2e tests? In the blog post [Effective Test Strategies for Front-end Applications using LaunchDarkly Feature Flags and Cypress. Part2: testing](https://dev.to/muratkeremozcan/effective-test-strategies-for-testing-front-end-applications-using-launchdarkly-feature-flags-and-cypress-part2-testing-2c72) there were effectively two strategies; stub the network & test and control the flag & test. With an API client we can do the latter the same way. There is no stubbing the network however, what other approach can we have?
+
+#### Conditional execution: get flag state, run conditionally 
+
+Although conditional testing is usually an anti-pattern, when testing feature flags in a deployed service  it gives us a read-only, idempotent approach worth exploring. After all we have to have some maintenance-free, non-feature flag related tests that need to work in every deployment regardless of flag states. Let's focus on our CRUD e2e test for the API `cypress/integration/with-spok.spec.js` where we have the flagged Update feature. We can wrap the relevant part of the test code within a conditional:
+
+```js
+cy.log("**wrap the relevant functionality in the flag value, only run if the flag is enabled**");
+cy.task("getFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) => {
+  if (flagValue) {
+    cy.updateOrder(token, orderId, putPayload)
+      .its("body")
+      .should(satisfyAssertions);
+  } else {
+    cy.log('**the flag is disabled, so the update will not be done**');
+  }
+});
+```
+
+The flag relevant test code only runs based on the flag state. With this tweak, our specs which are not flag relevant will work on any deployment regardless of flag status.
+
+![Flag condition inside it block](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/dayff6sc0blkei9ok3vg.png)
+
+![Flag enabled inside it block](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/fdldvh900tmrgajwssas.png)
+
+Conditional wrapping a describe or it block.
+
+
+
+#### Controlled flag: set flag and run test
+
+We also want to gain confidence that no matter how flags are controlled in any environment, they will work with our service. This will enable us to fully de-couple the testing of feature flags from the management of feature flags, thereby de-coupling continuous deployment from continuous delivery. The key here is to be able control and verify the flag state for a scoped user.
+
+Similar to the UI approach, we can set flag the feature flag in the beginning of a test and clean up at the end. This would be an exclusive feature flag test which we only need to run on one deployment; if we can control and verify the flag on one deployment, things will work the same on any deployment. Later, the spec would be converted to a permanent one, where which we can tweak it to not need flag controls, or the spec can get removed entirely. Therefore it is a good practice to house the spec under `./cypress/integration/feature-flags` and control in which deployment it executes with config files. 
+
+In our example demoing this test would require a token and user scope; create a pizza for a scoped user and try to update the pizza as that user. Since we did not implement authorization to our lambda, this test is not able to be shown. We can set the flag for a user but since the update is not scoped to that user, verifying whether that user can update a pizza or not is not possible.  We are confident that the test scenario will be trivial in the real world where APIs are secured and tokens are scoped to users.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
