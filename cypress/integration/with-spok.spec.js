@@ -4,11 +4,19 @@
 import spok from "cy-spok";
 import { datatype, address } from "@withshepherd/faker";
 import { FLAGS } from "../../flag-utils/flags";
-const getFlagValue = require("../../flag-utils/get-flag-value");
 
 describe("Crud operations with cy spok", () => {
   let token;
-  before(() => cy.task("token").then((t) => (token = t)));
+  before(() => {
+    cy.task("token").then((t) => (token = t));
+    // we can control the the entire test,
+    // a describe / context / it block with cy.onlyOn or cy.skipOn
+    // Note that it is redundant to have the 2 variants of flag-conditionals in the same test
+    // if you enable this part, you can disable the it block flag-conditional
+    // cy.task("getFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) =>
+    //   cy.onlyOn(flagValue === true)
+    // );
+  });
 
   const pizzaId = datatype.number();
   const editedPizzaId = +pizzaId;

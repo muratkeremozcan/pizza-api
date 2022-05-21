@@ -935,10 +935,13 @@ Now that we have stateless feature flag setting & removing capabilities coupled 
 
 #### Conditional execution: get flag state, run conditionally 
 
-Although conditional testing is usually an anti-pattern, when testing feature flags in a deployed service  it gives us a read-only, idempotent approach worth exploring. After all we have to have some maintenance-free, non-feature flag related tests that need to work in every deployment regardless of flag states. Let's focus on our CRUD e2e test for the API `cypress/integration/with-spok.spec.js` where we have the flagged Update feature. We can wrap the relevant part of the test code within a conditional:
+Although conditional testing is usually an anti-pattern, when testing feature flags in a deployed service  it gives us a read-only, idempotent approach worth exploring. After all we have to have some maintenance-free, non-feature flag related tests that need to work in every deployment regardless of flag states. Let's focus on our CRUD e2e test for the API `cypress/integration/with-spok.spec.js` where we have the flagged Update feature. 
+
+##### Wrap the test code inside the it block with a conditional
+
+We can wrap the relevant part of the test with a conditional driven by the flag value:
 
 ```js
-cy.log("**wrap the relevant functionality in the flag value, only run if the flag is enabled**");
 cy.task("getFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) => {
   if (flagValue) {
     cy.updateOrder(token, orderId, putPayload)
@@ -950,13 +953,130 @@ cy.task("getFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) => {
 });
 ```
 
-The flag relevant test code only runs based on the flag state. With this tweak, our specs which are not flag relevant will work on any deployment regardless of flag status.
+With this tweak, our specs which are not flag relevant will work on any deployment regardless of flag status.
 
 ![Flag condition inside it block](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/dayff6sc0blkei9ok3vg.png)
 
 ![Flag enabled inside it block](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/fdldvh900tmrgajwssas.png)
 
-Conditional wrapping a describe or it block.
+##### Disable / Enable a describe/context/it block or the entire test
+
+We can take advantage of another one of Gleb's fantastic plugins [cypress-skip-test](https://github.com/cypress-io/cypress-skip-test/blob/master/README.md). `npm install -D @cypress/skip-test` and Add the below line to `cypress/support/index.js:`
+
+```js
+require('@cypress/skip-test/support')
+```
+
+It has a key feature which allows us to run Cypress commands before deciding to skip or continue. We can utilize it in a describe / context / it block, but if we want to disable the whole suite without running anything, inside the before block is the way to go.
+
+```js
+  before(() => {
+    cy.task("token").then((t) => (token = t));
+    cy.task("getFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) =>
+      cy.onlyOn(flagValue === true)
+    );
+  });
+```
+
+Toggle the flag on, and things work as normal:
+
+![onlyOn flag === true](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/1ayzet39z9u0l2zoxbr5.png)
+
+If the flag is off, the test is skipped.
+
+![onlyOn flag === false](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/71cowpmvmpykuyjoa5iq.png)
+
+Here is the entire spec:
+
+```js
+/// <reference types="cypress"/>
+// @ts-nocheck
+
+import spok from "cy-spok";
+import { datatype, address } from "@withshepherd/faker";
+import { FLAGS } from "../../flag-utils/flags";
+
+describe("Crud operations with cy spok", () => {
+  let token;
+  before(() => {
+    cy.task("token").then((t) => (token = t));
+    // we can control the the entire test, 
+    // a describe / context / it block with cy.onlyOn or cy.skipOn
+    // Note that it is redundant to have the 2 variants of flag-conditionals in the same test
+    // they are both enabled here for easier blog readbility
+    cy.task("getFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) =>
+      cy.onlyOn(flagValue === true)
+    );
+  });
+
+  const pizzaId = datatype.number();
+  const editedPizzaId = +pizzaId;
+  const postPayload = { pizza: pizzaId, address: address.streetAddress() };
+  const putPayload = {
+    pizza: editedPizzaId,
+    address: address.streetAddress(),
+  };
+
+  // the common properties between the assertions
+  const commonProperties = {
+    address: spok.string,
+    orderId: spok.test(/\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/), // regex pattern to match any id
+    status: (s) => expect(s).to.be.oneOf(["pending", "delivered"]),
+  };
+
+  // common spok assertions between put and get
+  const satisfyAssertions = spok({
+    pizza: editedPizzaId,
+    ...commonProperties,
+  });
+
+  it("cruds an order, uses spok assertions", () => {
+    cy.task("log", "HELLO!");
+
+    cy.createOrder(token, postPayload).its("status").should("eq", 201);
+
+    cy.getOrders(token)
+      .should((res) => expect(res.status).to.eq(200))
+      .its("body")
+      .then((orders) => {
+        const ourPizza = Cypress._.filter(
+          orders,
+          (order) => order.pizza === pizzaId
+        );
+        cy.wrap(ourPizza.length).should("eq", 1);
+        const orderId = ourPizza[0].orderId;
+
+        cy.getOrder(token, orderId)
+          .its("body")
+          .should(
+            spok({
+              pizza: pizzaId,
+              ...commonProperties,
+            })
+          );
+
+        cy.log(
+          "**wrap the relevant functionality in the flag value, only run if the flag is enabled**"
+        );
+        cy.task("getFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) => {
+          if (flagValue) {
+            cy.log("**the flag is enabled, updating now**");
+            cy.updateOrder(token, orderId, putPayload)
+              .its("body")
+              .should(satisfyAssertions);
+          } else {
+            cy.log("**the flag is disabled, so the update will not be done**");
+          }
+        });
+
+        cy.getOrder(token, orderId).its("body").should(satisfyAssertions);
+
+        cy.deleteOrder(token, orderId).its("status").should("eq", 200);
+      });
+  });
+});
+
+```
 
 
 
@@ -964,9 +1084,9 @@ Conditional wrapping a describe or it block.
 
 We also want to gain confidence that no matter how flags are controlled in any environment, they will work with our service. This will enable us to fully de-couple the testing of feature flags from the management of feature flags, thereby de-coupling continuous deployment from continuous delivery. The key here is to be able control and verify the flag state for a scoped user.
 
-Similar to the UI approach, we can set flag the feature flag in the beginning of a test and clean up at the end. This would be an exclusive feature flag test which we only need to run on one deployment; if we can control and verify the flag on one deployment, things will work the same on any deployment. Later, the spec would be converted to a permanent one, where which we can tweak it to not need flag controls, or the spec can get removed entirely. Therefore it is a good practice to house the spec under `./cypress/integration/feature-flags` and control in which deployment it executes with config files. 
+Similar to the UI approach, we can set flag the feature flag in the beginning of a test and clean up at the end. This would be an exclusive feature flag test which we only need to run on one deployment; if we can control and verify the flag value's consequences on one deployment, things will work the same on any deployment. Later, the spec would be converted to a permanent one, where which we can tweak it to not need flag controls, or the spec can get removed entirely. Therefore it is a good practice to house the spec under `./cypress/integration/feature-flags` and control in which deployment it executes with config files using `ignoreTestFiles` property in the json. 
 
-In our example demoing this test would require a token and user scope; create a pizza for a scoped user and try to update the pizza as that user. Since we did not implement authorization to our lambda, this test is not able to be shown. We can set the flag for a user but since the update is not scoped to that user, verifying whether that user can update a pizza or not is not possible.  We are confident that the test scenario will be trivial in the real world where APIs are secured and tokens are scoped to users.
+In our example demoing this test would require a token and user scope; create a pizza for a scoped user and try to update the pizza as that user. Since we did not implement authorization to our lambda, this test is not able to be shown in a satisfactory manner. We can set the flag for a user but since the update is not scoped to that user, verifying whether that user can update a pizza or not is not possible.  We are confident that the test scenario will be trivial in the real world where APIs are secured and tokens are scoped to users. 
 
 
 
