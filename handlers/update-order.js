@@ -1,11 +1,11 @@
 const AWSXRay = require("aws-xray-sdk-core");
 const AWS = AWSXRay.captureAWS(require("aws-sdk"));
 const docClient = new AWS.DynamoDB.DocumentClient();
-const getFlagValue = require("../flag-utils/get-flag-value");
+const getLDFlagValue = require("../flag-utils/get-ld-flag-value");
 const { FLAGS } = require("../flag-utils/flags");
 
 async function updateOrder(orderId, options) {
-  const FF_UPDATE_ORDER = await getFlagValue(FLAGS.UPDATE_ORDER);
+  const FF_UPDATE_ORDER = await getLDFlagValue(FLAGS.UPDATE_ORDER);
 
   console.log("You tried to Update the order: ", orderId);
   console.log("The flag value is: ", FF_UPDATE_ORDER);

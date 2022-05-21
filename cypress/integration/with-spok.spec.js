@@ -13,7 +13,7 @@ describe("Crud operations with cy spok", () => {
     // a describe / context / it block with cy.onlyOn or cy.skipOn
     // Note that it is redundant to have the 2 variants of flag-conditionals in the same test
     // if you enable this part, you can disable the it block flag-conditional
-    // cy.task("getFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) =>
+    // cy.task("getLDFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) =>
     //   cy.onlyOn(flagValue === true)
     // );
   });
@@ -67,7 +67,7 @@ describe("Crud operations with cy spok", () => {
         cy.log(
           "**wrap the relevant functionality in the flag value, only run if the flag is enabled**"
         );
-        cy.task("getFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) => {
+        cy.task("getLDFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) => {
           if (flagValue) {
             cy.log("**the flag is enabled, updating now**");
             cy.updateOrder(token, orderId, putPayload)

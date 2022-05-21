@@ -60,10 +60,10 @@ describe("FF sanity", () => {
 
     it("should get the flag value for generic users vs the targeted user using the LD instance", () => {
       cy.log("generic users");
-      cy.task("getFlagValue", FLAGS.UPDATE_ORDER).should("eq", true);
+      cy.task("getLDFlagValue", FLAGS.UPDATE_ORDER).should("eq", true);
 
       cy.log("targeted user");
-      cy.task("getFlagValue", {
+      cy.task("getLDFlagValue", {
         keys: FLAGS.UPDATE_ORDER,
         user: randomUserId,
       }).should("eq", false);

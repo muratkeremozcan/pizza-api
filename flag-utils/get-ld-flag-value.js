@@ -16,7 +16,7 @@ require("dotenv").config();
  * by the handler when it is called back to back without the flag changing value.
  *
  */
-const getFlagValue = (function () {
+const getLDFlagValue = (function () {
   // ldClient holds a copy of the LaunchDarkly client that will be returned once the SDK is initialized
   let ldClient;
 
@@ -51,4 +51,4 @@ const getFlagValue = (function () {
   return flagValue;
 })();
 
-module.exports = getFlagValue;
+module.exports = getLDFlagValue;
