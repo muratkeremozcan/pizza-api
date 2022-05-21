@@ -3,10 +3,20 @@
 
 import spok from "cy-spok";
 import { datatype, address } from "@withshepherd/faker";
+import { FLAGS } from "../../flag-utils/flags";
 
 describe("Crud operations with cy spok", () => {
   let token;
-  before(() => cy.task("token").then((t) => (token = t)));
+  before(() => {
+    cy.task("token").then((t) => (token = t));
+    // we can control the the entire test,
+    // a describe / context / it block with cy.onlyOn or cy.skipOn
+    // Note that it is redundant to have the 2 variants of flag-conditionals in the same test
+    // if you enable this part, you can disable the it block flag-conditional
+    // cy.task("getLDFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) =>
+    //   cy.onlyOn(flagValue === true)
+    // );
+  });
 
   const pizzaId = datatype.number();
   const editedPizzaId = +pizzaId;
@@ -54,9 +64,19 @@ describe("Crud operations with cy spok", () => {
             })
           );
 
-        cy.updateOrder(token, orderId, putPayload)
-          .its("body")
-          .should(satisfyAssertions);
+        cy.log(
+          "**wrap the relevant functionality in the flag value, only run if the flag is enabled**"
+        );
+        cy.task("getLDFlagValue", FLAGS.UPDATE_ORDER).then((flagValue) => {
+          if (flagValue) {
+            cy.log("**the flag is enabled, updating now**");
+            cy.updateOrder(token, orderId, putPayload)
+              .its("body")
+              .should(satisfyAssertions);
+          } else {
+            cy.log("**the flag is disabled, so the update will not be done**");
+          }
+        });
 
         cy.getOrder(token, orderId).its("body").should(satisfyAssertions);
 

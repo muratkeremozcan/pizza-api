@@ -7,7 +7,16 @@ require("dotenv").config();
 // Additionally, the instance of ldClient gets stored in the module scope
 // and is reused by the handler when it is called back to back without the flag changing value
 
-const getFlagValue = (function () {
+/**
+ * 1. Gets the flag value using the LD client.
+ * 2. Initializes the LD client if it doesn't exist, else reuses the existing client.
+ * 3. Waits for the initialization to complete.
+ * 4. If a user is not provided while getting the flag value, populates an anonymous user for user-targeting
+ * 5. The code calling the LD client cannot be observed by any other part of the application and is reused
+ * by the handler when it is called back to back without the flag changing value.
+ *
+ */
+const getLDFlagValue = (function () {
   // ldClient holds a copy of the LaunchDarkly client that will be returned once the SDK is initialized
   let ldClient;
 
@@ -42,4 +51,4 @@ const getFlagValue = (function () {
   return flagValue;
 })();
 
-module.exports = getFlagValue;
+module.exports = getLDFlagValue;
