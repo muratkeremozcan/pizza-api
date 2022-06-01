@@ -42,12 +42,9 @@ describe("FF sanity", () => {
   });
 
   context("flag toggle using the test plugin", () => {
-    const DEFAULT_RULE_TRUE = 0; // generic users get this
-    const TARGETED_RULE_FALSE = 1; // targeted users get this
+    const TRUE_VARIANT = 0; // generic users get this
+    const FALSE_VARIANT = 1; // targeted users get this
 
-    beforeEach("set flag variation for a targeted user", () =>
-      setFlagVariation(FLAGS.UPDATE_ORDER, randomUserId, TARGETED_RULE_FALSE)
-    );
     afterEach("user-targeted-flag clean up", () =>
       removeUserTarget(FLAGS.UPDATE_ORDER, randomUserId)
     );
@@ -55,17 +52,28 @@ describe("FF sanity", () => {
     it("should get the flag value for generic users using Cypress test plugin", () => {
       getFeatureFlag(FLAGS.UPDATE_ORDER)
         .its("environments.test.fallthrough.variation")
-        .should("eq", DEFAULT_RULE_TRUE);
+        .should("eq", TRUE_VARIANT);
     });
 
-    it("should get the flag value for generic users vs the targeted user using the LD instance", () => {
-      cy.log("generic users");
+    it("should get the flag value for generic users using the LD instance", () => {
       cy.task("getLDFlagValue", FLAGS.UPDATE_ORDER).should("eq", true);
+    });
 
-      cy.log("targeted user");
+    it("should get the flag value TRUE using the LD instance", () => {
+      setFlagVariation(FLAGS.UPDATE_ORDER, randomUserId, TRUE_VARIANT);
+
       cy.task("getLDFlagValue", {
-        keys: FLAGS.UPDATE_ORDER,
-        user: randomUserId,
+        key: FLAGS.UPDATE_ORDER,
+        userId: randomUserId,
+      }).should("eq", true);
+    });
+
+    it("should get the flag value FALSE using the LD instance", () => {
+      setFlagVariation(FLAGS.UPDATE_ORDER, randomUserId, FALSE_VARIANT);
+
+      cy.task("getLDFlagValue", {
+        key: FLAGS.UPDATE_ORDER,
+        userId: randomUserId,
       }).should("eq", false);
     });
   });
