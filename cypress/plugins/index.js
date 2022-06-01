@@ -7,6 +7,11 @@ const token = require("../../scripts/cypress-token");
 const { initLaunchDarklyApiTasks } = require("cypress-ld-control");
 require("dotenv").config();
 
+function isObject(value) {
+  const type = typeof value;
+  return value != null && (type === "object" || type === "function");
+}
+
 module.exports = (on, config) => {
   const combinedTasks = {
     // add your other Cypress tasks if any
@@ -16,7 +21,22 @@ module.exports = (on, config) => {
       console.log(x);
       return null;
     },
-    getLDFlagValue,
+    getLDFlagValue: (arg) => {
+      // cy.task api changes whether there is 1 arg or multiple args;
+      // it takes a string for a single arg, it takes and object for multiple args.
+      // LD client accepts a user object as { key: 'userId' }.
+      // We have to do some wrangling to make the api easy to use
+      // we want an api like :
+      // cy.task('getLDFlagValue', 'my-flag-value' ) for generic users
+      // cy.task('getLdFlagValue', { key: 'my-flag-value', userId: 'abc123'  }) for targeted users
+      if (isObject(arg)) {
+        const { key, userId } = arg;
+        console.log(`cy.task args: key: ${key} user.key: ${userId}`);
+        return getLDFlagValue(key, { key: userId });
+      }
+      console.log(`cy.task arg: ${arg}`);
+      return getLDFlagValue(arg);
+    },
   };
 
   // if no env vars, don't load the plugin

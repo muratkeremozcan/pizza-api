@@ -4,22 +4,14 @@ require("dotenv").config();
 // we use an IIFE and wrap the module
 // so that ldClient cannot be observed by any other part of the application
 // This way, the handler has exclusive access to the LaunchDarkly client.
-// Additionally, the instance of ldClient gets stored in the module scope
-// and is reused by the handler when it is called back to back without the flag changing value
 
 /**
- * 1. Gets the flag value using the LD client.
- * 2. Initializes the LD client if it doesn't exist, else reuses the existing client.
- * 3. Waits for the initialization to complete.
- * 4. If a user is not provided while getting the flag value, populates an anonymous user for user-targeting
- * 5. The code calling the LD client cannot be observed by any other part of the application and is reused
- * by the handler when it is called back to back without the flag changing value.
- *
+ * 1. Initializes the LD client & waits for the initialization to complete.
+ * 2. Gets the flag value using the LD client.
+ * 3. If a user is not provided while getting the flag value, populates an anonymous user generic users.
+ * 4. The code calling the LD client cannot be observed by any other part of the application.
  */
 const getLDFlagValue = (function () {
-  // ldClient holds a copy of the LaunchDarkly client that will be returned once the SDK is initialized
-  let ldClient;
-
   /** Handles the initialization using the SDK key,
    * which is available on the account settings in the LaunchDarkly dashboard.
    * Once the client is initialized, getClient() returns it. */
@@ -30,10 +22,11 @@ const getLDFlagValue = (function () {
   }
 
   /** A generic wrapper around the client's variation() method used get a flag's current value
-   * Initializes the client if it doesn't exist, else reuses the existing client.
-   * Populates an anonymous user key if one is not provided for user targeting. */
+   * Initializes the client
+   * Populates an anonymous user key if one is not provided, to handle generic users. */
   async function flagValue(key, user, defaultValue = false) {
-    if (!ldClient) ldClient = await getClient();
+    // We want a unique LD client instance with every call to ensure stateless assertions
+    const ldClient = await getClient();
 
     if (!user) {
       user = {
@@ -41,11 +34,11 @@ const getLDFlagValue = (function () {
       };
     }
 
-    // TODO: discuss this topic. It makes no difference
-    // const flagValue = await ldClient.variation(key, user, defaultValue);
-    // ldClient.close();
-
-    return ldClient.variation(key, user, defaultValue);
+    const flagValue = await ldClient.variation(key, user, defaultValue);
+    console.log(
+      `**LDclient** flag: ${key} user.key: ${user.key} value: ${flagValue}`
+    );
+    return flagValue;
   }
 
   return flagValue;
